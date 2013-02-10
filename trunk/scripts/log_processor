@@ -1,0 +1,1000 @@
+#!/usr/bin/perl 
+
+# $Id$
+# Developed by Clayton Dukes <cdukes@logzilla.pro>, Piotr Piatkowski <pp@idea7.pl>
+# Copyright (c) 2009-2012 LogZilla, LLC
+# All rights reserved.
+#
+# Read syslog line from STDIN, process records and:
+# - aggregate duplicates if appropriate option set
+# - put records to the database (aggregated, once per configured time period)
+# - update tables with message rates (using module RateMeter)
+# - update information on last seen host/program/mnemonic/...
+# - check and run alarm triggers (including mail sending and SNMP trap forwarding)
+
+use strict;
+use warnings;
+
+use Find::Lib qw(../lib);
+
+use LogZilla::DebugFilter;
+
+use Carp;
+use POSIX;
+use DBI;
+use File::Spec;
+use File::Basename;
+use String::CRC32;
+use Digest::MD5 qw(md5_hex);
+use Date::Calc;
+use MIME::Lite;
+use Data::Dumper;
+use CHI;
+use Net::SNMP qw(SNMP_TRAP_PORT OCTET_STRING);
+use Log::Fast;
+use Getopt::Long;
+use FindBin;
+use Cwd qw(abs_path);
+use File::Temp;
+use IO::Select;
+use PerlIO::Util;
+use List::Util qw(max);
+
+use LogZilla::Config;
+use LogZilla::RateMeter;
+
+my $ROOT_DIR = abs_path("$FindBin::Bin/..");
+
+# Command line options
+my $options = {
+    debug => 0,
+    verbose => 0,
+    log_file => undef, # will set default later based on settings in DB
+    config_file => "$ROOT_DIR/html/config/config.php",
+    save_period => 1,
+    save_msg_limit => 0, # no limit
+    dbi_debug => 0,
+    dump_save => 0,
+    help => 0,
+};
+
+sub usage_and_exit {
+    my( $exit_code ) = @_;
+
+    my $myname = $0;
+    $myname =~ s{.*/}{}; # leave just program name without path
+
+    # TODO sync this with getopt
+    print STDERR qq{
+This program is used to process incoming syslog messages from a file.
+Usage: $myname [-option -option] 
+    -h        : this (help) message
+    -d        : debug level (0-5) (0 = disabled [default])
+    -v        : Also print results to STDERR
+    -l        : log file (defaults to dir set in DB settings)
+    -c        : config file (defaults to $options->{config_file})
+    -sp       : Save Period (how often to dump messages into the DB) (defaults to 1 Second)
+    -sml      : Save Message Limit (defaults to no limit)
+    -dd       : Print extra debug messages for the Perl DBI
+    -ds       : Save all temporary dump files (default is to use a single, random temp name and then remove it after import)
+Example: $myname -l /var/log/foo.log -d 5 -c test/config.php -v
+};
+    exit($exit_code);
+}
+
+GetOptions(
+    'debug|d=i'            => \$options->{debug},
+    'help|h!'              => \$options->{help},
+    'verbose|v!'           => \$options->{verbose},
+    'log-file|l=s'         => \$options->{log_file},
+    'config-file|c=s'      => \$options->{config_file},
+    'save-period|sp=i'     => \$options->{save_period},
+    'save-msg-limit|sml=i' => \$options->{save_msg_limit},
+    'dbi-debug|dd=i'       => \$options->{dbi_debug},
+    'dump-save|ds!'        => \$options->{dump_save},
+) or usage_and_exit(1); # got some invalid options
+
+if( $options->{help} ) {
+    usage_and_exit(0);
+}
+
+# Create default logger, will reconfigure it as soon as we read configuration from database
+my $log = Log::Fast->global();
+
+# Read configuration from (PHP) config file
+my $cfg = LogZilla::Config->new( path => $options->{config_file} );
+
+# Connect to DB and setup error handler to log to $log and then exit with error
+my $dbh = connect_to_db();
+
+# Read settings from DB. 
+my $settings = read_settings_from_db();
+
+my $rate_meter = LogZilla::RateMeter->new( config => $cfg, dbh => $dbh );
+
+# FIXME What we have now is big mess - we have 3 configuration sets:
+#   $options - from command line
+#   $cfg - from php config file
+#   $settings - from database
+# It should be definitely cleaned up, but it probably requires changes also in
+# other parts of system, so I leave it for the future (PP)
+
+# Increase debug option if DEBUG set in database
+$options->{debug} += $settings->{DEBUG};
+
+# Reconfigure log to use log_file (as we finally got it from $settings), also
+# set proper level and output based on $options{verbose} and $options{debug}
+setup_log();
+
+# cdukes: 2012-03-02 Added makepart on script startup to just try 
+#   and create a missing partition rather than waiting for the error.
+manage_db_partitions();
+
+# This is list of counter tables, used by sub 'save_messages'
+my @counters_cfg = (
+    { table => 'hosts',     table_field => 'host', message_field => 'host', crc => 0 },
+    { table => 'programs',  table_field => 'name', message_field => 'prg',  crc => 1 },
+    { table => 'mne',       table_field => 'name', message_field => 'mne',  crc => 1 },
+);
+
+#if( $settings->{SNARE} ) { # CHECK THIS - 'if' removed to be compatible with old script
+    push( @counters_cfg, 
+    { table => 'snare_eid', table_field => 'eid',  message_field => 'eid',  crc => 0 } );
+#}
+
+for my $cfg ( @counters_cfg ) {
+    if( $cfg->{crc} ) {
+        $cfg->{sth} = $dbh->prepare( 
+            "INSERT INTO $cfg->{table} ( $cfg->{table_field}, crc, lastseen, seen ) " . 
+            "VALUES (?, ?, from_unixtime(?), ?) ON DUPLICATE KEY UPDATE " . 
+            "lastseen = greatest(lastseen,values(lastseen)), seen = seen + values(seen), " .
+            "hidden = 'false'" );
+    }
+    else {
+        $cfg->{sth} = $dbh->prepare( 
+            "INSERT INTO $cfg->{table} ( $cfg->{table_field}, lastseen, seen ) " . 
+            "VALUES (?, from_unixtime(?), ?) ON DUPLICATE KEY UPDATE " .
+            "lastseen = greatest(lastseen,values(lastseen)), seen = seen + values(seen), " .
+            "hidden = 'false'" );
+    }
+}
+
+my $prep_sth = {
+    max_id => $dbh->prepare( 
+        "REPLACE INTO cache (name, value, updatetime) " .
+        "VALUES ('max_id', ?, NOW())" 
+    ),
+    msg_sum => $dbh->prepare( 
+        "INSERT INTO cache (name, value, updatetime) " .
+        "VALUES ('msg_sum', ?, NOW()) " .
+        "ON DUPLICATE KEY UPDATE value = value + values(value)"
+    ),
+    update_logs => $dbh->prepare(
+        "UPDATE logs SET counter = counter + ?, lo = from_unixtime(?) " .
+        "WHERE id = ?" 
+    ),
+    load_logs => $dbh->prepare(
+        "LOAD DATA INFILE ? INTO TABLE logs " .
+        'FIELDS TERMINATED BY "\\t" ' .
+        'LINES TERMINATED BY "\\n" ' .
+        '(host, facility, severity, program, msg, mne, eid, counter, @fo_ts, @lo_ts) ' .
+        'SET fo = from_unixtime(@fo_ts), lo = from_unixtime(@lo_ts)'
+    ),
+    show_warnings => $dbh->prepare( 
+        "SHOW WARNINGS"
+    ),
+    last_insert_id => $dbh->prepare( 
+        "SELECT LAST_INSERT_ID()"
+    ),
+};
+
+# Finally we are initialized, announce this to the world :-)
+$log->INFO( "Program initialized successfully" );
+$log->INFO( "Debug level: $options->{debug}" );
+$log->INFO( "Database: " . $cfg->db_dsn );
+$log->INFO( "Deduplication feature: " . ( $settings->{DEDUP} || 0 ) );
+$log->INFO( "Snare " . ( $options->{SNARE} ? 'enabled' : 'disabled' ) );
+
+my $triggers = load_triggers();
+
+my $input_fh = \*STDIN;
+my $select = IO::Select->new();
+$select->add($input_fh);
+
+my $eof = 0;
+my $recvq = '';
+my $saver_pid = 0;
+DB::enable_profile() if $ENV{NYTPROF};
+while( ! $eof ) {
+
+    my @messages = ();
+    my $last_update_time = time();
+
+    # Read messages till we have new second reached
+    while( time() - $last_update_time < $options->{save_period} && 
+           ( ! $options->{save_msg_limit} || @messages < $options->{save_msg_limit} ) ) {
+        # We cannot use getline, as it doesn't cooperate well with io::select, thus
+        # we implement it ourself with recvq buffer and regexp getting line by line
+        if( $recvq =~ s/(.*)\n// ) {
+            my $line = $1;
+            push( @messages, process_line( $line ) );
+        }
+        elsif( $select->can_read( 0.02 ) ) {
+            my $n = sysread( $input_fh, $recvq, 4096, length($recvq) );
+            if( $n == 0 ) {
+                $eof = 1;
+                last; # leave inner loop, so we'll call 
+                      # save_messages before exiting the outer loop
+            }
+            elsif( $n < 0 ) {
+                $log->ERR( "Error reading STDIN: $!" );
+                last
+            }
+        }
+    }
+
+    # This will be at most once per $options->{save_period} seconds
+    # We call it even if no messages collected - to update rate meter with rate = 0.
+    save_messages( @messages );
+}
+
+$log->NOTICE( "EOF detected, exiting" );
+DB::finish_profile() if $ENV{NYTPROF};
+
+my $dump_num = 1; # Used when saving dumps enabled
+
+sub save_messages {
+    my( @messages ) = @_;
+
+    DEBUG( 1, "save_messages, nr of msg: " . scalar(@messages) );
+
+    # Update counters for messages, first aggregating by ts. Do it before deduplication,
+    # so we don't have to worry about counters, aggregation and so...
+    my %rates;
+    for my $msg ( @messages ) {
+        $rates{ $msg->{fo} }++;
+    }
+    for my $ts ( keys %rates ) {
+        $rate_meter->update( $rates{$ts}, $ts );
+    }
+    
+    $prep_sth->{msg_sum}->execute(scalar(@messages));
+
+    if( $settings->{DEDUP} ) {
+        @messages = deduplicate( @messages );
+        my $sth = $prep_sth->{update_logs};
+        $dbh->do("START TRANSACTION");
+        for my $msg ( @messages ) {
+            if( $msg->{id} ) {
+                DEBUG( 2, "Updating logs for id=%d, counter+=%d, lo=%d", 
+                    $msg->{id}, $msg->{counter}, $msg->{lo} );
+                $sth->execute( $msg->{counter}, $msg->{lo}, $msg->{id} );
+                if( $sth->{mysql_warning_count} > 0 ) {
+                    log_mysql_warnings( $dbh, $sth );
+                }
+            }
+        }
+        $dbh->do("COMMIT");
+    }
+
+    # Update counters based on list of counters in @counters_cfg
+    $dbh->do("START TRANSACTION");
+    for my $counter ( @counters_cfg ) {
+        my %counts;
+        my %last_seen;
+        for my $msg ( @messages ) {
+            my $key = $msg->{ $counter->{message_field} };
+            $counts{$key} += $msg->{counter};
+            if( ! $last_seen{$key} || $last_seen{$key} < $msg->{lo} ) {
+                $last_seen{$key} = $msg->{lo};
+            }
+        }
+        for my $k ( keys %counts ) {
+            my @params = ( 
+                $k, 
+                ( $counter->{crc} ? crc32($k) : () ), 
+                $last_seen{$k}, 
+                $counts{$k},
+            );
+            DEBUG( 2, "Updating counter: %s with (%s)",
+                $counter->{sth}->{Statement}, join( ", ", @params ) );
+            $counter->{sth}->execute( @params );
+            if( $counter->{sth}->{mysql_warning_count} > 0 ) {
+                log_mysql_warnings( $dbh, $counter->{sth} );
+            }
+        }
+    }
+    $dbh->do("COMMIT");
+
+    if( $settings->{DEDUP} ) {
+        # Filter out messages which already exists in DB (we already updated them above),
+        # then mark all new messages as being in DB, as they can be already in dedup cache,
+        # and they'll really be in database soon.
+        my @new_messages = ();
+        for my $msg ( @messages ) {
+            if( $msg->{id} ) {
+                $msg->{counter} = 0;
+                DEBUG( 5, "Msg '$msg->{msg}' - already in db, reset counter and leave" );
+            }
+            else {
+                push( @new_messages, $msg );
+                DEBUG( 5, "Msg '$msg->{msg}' - new, put into db" );
+            }
+        }
+        @messages = @new_messages;
+        clean_dedup_cache();
+    }
+
+    DEBUG( 1, "Dumping " . scalar(@messages) . " messages" );
+
+    my $dumpfile = File::Temp->new(); # This is both path and fh
+    chmod( 0644, $dumpfile ) or croak( "chmod $dumpfile: $!" );
+    for my $msg ( @messages ) {
+        my @values = (
+            $msg->{host},
+            $msg->{facility},
+            $msg->{severity},
+            crc32($msg->{prg}),
+            $msg->{msg},
+            crc32($msg->{mne}),
+            $msg->{eid},
+            $msg->{counter},
+            $msg->{fo},
+            $msg->{lo},
+        );
+        print $dumpfile join( "\t", @values ) . "\n";
+        DEBUG( 5, "DUMP: " . join( "|", @values ) );
+    }
+    $dumpfile->flush();
+
+    $dbh->do("START TRANSACTION");
+    my $sth = $prep_sth->{load_logs};
+    $sth->execute("$dumpfile");
+    if( $sth->{mysql_warning_count} > 0 ) {
+        log_mysql_warnings( $dbh, $sth );
+    }
+    $dbh->do("COMMIT");
+
+    if( $options->{dump_save} ) {
+        my $dir = "/tmp/lz-dumps";
+        -d $dir or mkdir( $dir, 0755 ) or croak( "mkdir $dir: $!" );
+        my $copy_name = sprintf( "dump-$$.%06d", $dump_num++ );
+        system( "cp $dumpfile $dir/$copy_name" );
+        $log->WARN("Copied $dumpfile to $dir/$copy_name");
+    }
+
+    close($dumpfile);
+    
+    $prep_sth->{last_insert_id}->execute();
+    my $last_insert_id = $prep_sth->{last_insert_id}->fetchrow_arrayref()->[0];
+    DEBUG( 2, "last_insert_id=$last_insert_id" );
+
+    my $inserted_num = scalar(@messages);
+    # For operations inserting many records at once last_insert_id returns id for the first 
+    # record inserted, so we must add number of records inserted minus 1 to get actual max_id.
+    my $new_max_id = $last_insert_id + $inserted_num - 1;
+    if( $new_max_id > 1 ) {
+        $prep_sth->{max_id}->execute($new_max_id);
+    }
+    else {
+        $log->WARN("Wrong new max_id ($new_max_id, last_insert_id=$last_insert_id, " .
+            "inserted_num=$inserted_num");
+    }
+
+    # If deduplication enabled, then set id of inserted records so it can be used
+    # later on for updating counter/lo fields. Remember these are references, so 
+    # although we don't save @messages here, individual messages can still reside in
+    # deduplication cache.
+    if( $settings->{DEDUP} ) {
+        DEBUG( 2, "Setting id of messages from %d to %d",
+            $last_insert_id, $last_insert_id + $#messages );
+        for my $i ( 0 .. $#messages ) {
+            $messages[$i]->{id} = $last_insert_id + $i;
+            $messages[$i]->{counter} = 0;
+        }
+    }
+
+    DEBUG( 1, "Dumping finished" );
+}
+
+# Subs
+
+sub process_line {
+    my( $line ) = @_;
+
+    my $win = "";
+    my $eid = 0;
+    my $facilityname = "";
+
+    DEBUG( 1, "INCOMING MESSAGE: $line" );
+
+    if ( $line =~ m/MSWinEventLog.+?(Security|Application|System).+?/ ) {
+        $win = "MSWinEventLog";
+        $facilityname = $1;
+        if( ( $line =~ m/201\d(\d+)$facilityname/ ) || 
+            ( $line =~ m/\d+:\d+:\d+\s+201\d(\d+)/ ) || 
+            ( $line =~ m/\d+:\d+:\d+ 20\d+\\011(\d+)\\011/ ) ) {
+            $eid = $1;
+        }
+    }
+
+    if ( $line =~ /(\S+ \S+)\t(\S+)\t(\d+)\t(\S+)?.*\t(.*)/ ) {
+
+        # v3.2 Fields are: TS, Host, PRI, Program,  and MSG
+        my $ts       = $1;
+        my $host     = $2;
+        my $pri      = $3;
+        my $prg      = $4;
+        my $msg      = $5;
+
+        if( $ts =~ /^(....)-(..)-(..) (..):(..):(..)$/ ) {
+            $ts = POSIX::mktime( $6, $5, $4, $3, $2 - 1, $1 - 1900 );
+        }
+        else {
+            $log->WARN( "Invalid timestamp in log '$ts', skipping" );
+            return;
+        }
+
+        DEBUG( 1, "ts=%s, host=%s, pri=%s, prg=%s, msg=%s", $ts, $host, $pri, $prg, $msg );
+
+        my $facility = int($pri / 8);
+        my $severity =    ($pri % 8);
+ 
+        if ( $msg =~ /^%PIX/ ) {
+            $prg = "Cisco ASA";
+        }
+        
+        if ( $msg =~ /3Com_Firewall/ ) {
+            $prg = "3Com Firewall";
+            $msg =~ s/\[3Com_Firewall\]?\s(.*)/$1/;
+        }
+ 
+        # OSSEC sends the originating host as part of the message
+        if ( $msg =~ /Alert.*?Location: \((.*?)\) ([\d\.]+)/o ) {
+            $host = $1;
+            $prg  = "OSSEC Security";
+        }
+
+        # Handle Snare Format
+        if ( $win ) {
+            $prg = $win;
+
+            $facility = {
+                Application => 23,
+                Security => 4,
+                System => 3,
+            }->{$facilityname} || 16;
+
+            # FIXME - optimize and simplify, but first get real log entry matching and make sure
+            # this works at all (shouldn't those be \011 instead?)
+            if ( $msg =~ m/.*\\011(.*)\\011(.*)\\011(.*)\\011(.*)\\011(.*)\\011(.*)\\011(.*)\\011.*\\011(.*)\\011.*/ ) {
+                #$eid = $1 if ( $eid = "" );
+                my $source      = $2;
+                my $username    = $3;
+                my $usertype    = $4;
+                my $type        = $5;
+                my $computer    = $6;
+                my $category    = $7;
+                my $description = $8;
+                $prg = $source;
+
+                $msg = 
+                "Log=" . $facilityname . ", " .
+                "Source=" . $source . ", " .
+                "Category=" . $category . ", " .
+                "Type=" . $type . ", " .
+                "EventID=" . $eid . ", " . 
+                "Username=" . $username . ", " .
+                "Usertype=" . $usertype . ", " .
+                "Computer=" . $computer . ", " .
+                "Description=" . $description;
+            }
+        }
+
+        # FIXME - this is actually backslash and we remove first, not trailing!
+        $msg =~ s/\\//;     # Some messages come in with a trailing slash 
+
+        $msg =~ s/\t/ /g;   # remove any extra TABs
+        $msg =~ s/\177/ /g; # Fix for NT Events Logs (they send 0x7f with the message)
+
+        # Mail Trigger (also SNMP Trap)
+        for my $trigger ( @{$triggers} ) {
+            my $pattern = $trigger->{pattern};
+            DEBUG( 4, "Looking for pattern \"$pattern\" in message \"$msg\"" );
+            if ( $msg =~ $pattern ) {
+                DEBUG( 3, "Found pattern '$pattern' in message: '$msg', sending email!" );
+                trigger_mail( $trigger, $host, $msg );
+            }
+        }
+
+        my $mne;
+        if ( $msg =~ /\%([A-Z\-\d\_]+?\-\d+\-[A-Z\-\_\d]+?)(?:\:|\s)/ ) {
+            $mne = $1;
+            $prg = "Cisco Syslog";
+        } else {
+            $mne = "None";
+        }
+
+        # Cisco ASA's send their Mnemonic in the program field...
+        if( $prg =~ /%(\w+-\d+-\S+):?/ ) {
+            $mne = $1; 
+        }
+
+        $prg =~ s/%ACE.*\d+/Cisco ACE/; # Added because ACE modules don't send their program field properly
+        $prg =~ s/%ASA.*\d+/Cisco ASA/; # Added because ASA's don't send their program field properly
+        $prg =~ s/%FWSM.*\d+/Cisco FWSM/; # Added because FWSM's don't send their program field properly
+        $prg =~ s/date=\d+-\d+-\d+/Fortigate Firewall/; # Added because Fortigate's don't follow IETF standards
+        $prg =~ s/:$//; # Strip trailing colon from some programs (such as kernel)
+        $msg =~ s/time=\d+:\d+:\d+\s//; # Added because Fortigate's don't s follow IETF standards
+
+        # Catch-All:
+        $prg =~ s/^\d+$/Cisco Syslog/; # Cisco Messages send the program as an int string.
+        if ( !$prg ) {
+            $prg = "Syslog";
+        }
+
+        # Added below to strip paths from program names so that just the program is listed
+        # i.e.: /USR/SBIN/CRON would be inserted into the DB as just CRON
+        if ( $prg =~ /\// ) {
+            $prg = fileparse($prg);
+        }
+
+        # Add filter for Juniper boxes - invalid mnemonics were being picked up.
+        if ( $prg =~ /Juniper/ ) {
+            $mne = "None";
+        }
+
+        # Special fix (urldecode) for any urlencoded strings coming in from VmWare or Apache
+        $prg =~ s/%([A-Fa-f0-9]{2})/pack('C', hex($1))/eg;
+        if ( !$mne ) {
+            $msg =~ s/%([A-Fa-f0-9]{2})/pack('C', hex($1))/eg;
+        }
+
+        # Added for Elion to catch ESX
+        if ( $host =~ /esx\.vm\.est/ ) {
+            $prg = "VMWare";
+        }
+
+        # Catch-all for junk streams...
+        # This won't work well in non-english environments...
+        # $prg = "Unknown" if ($prg !~ /^[\w\'-\s]+$/);
+        $prg = 'Unknown' unless ( $prg =~ m{^[-'\w\s]{3,}$} and $prg =~ m{[A-Za-z]{3,}} );
+
+        my $message = {
+            host => $host,
+            facility => $facility,
+            severity => $severity,
+            prg => $prg,
+            msg => $msg,
+            mne => $mne,
+            eid => $eid,
+            fo => $ts,
+            lo => $ts,
+            counter => 1,
+        };
+
+        return $message;
+    } 
+    else {
+        $log->WARN( "INVALID MESSAGE FORMAT: '$line'" );
+        return;
+    }
+
+}
+
+# =================================================================================================
+# Deduplication stuff - TODO move this to separate module
+# =================================================================================================
+
+
+my( $dedup_by_key, $dedup_first, $dedup_last );
+
+# Get message, return it's duplicate key - that is, if that keys are equal for
+# two messages, we treat them as duplicates.
+sub _msg_dup_key {
+    my( $msg ) = @_;
+    return md5_hex( join( '|', 
+            $msg->{host}, 
+            $msg->{facility},
+            $msg->{severity}, 
+            $msg->{prg},
+            $msg->{msg} ) );
+}
+
+# For two dates given as unix timestamps load records from database. We don't
+# group them so if they weren't grouped in DB then what we get here under given
+# key will be an array of messages ordered by first_occurence
+sub load_deduplication_cache {
+    my( $from, $to ) = @_;
+
+    $log->INFO( "Loading dedup cache, from=$from, to=$to" );
+    DEBUG( 1, "Loading dedup cache from %s to %s", 
+        sub{ scalar( localtime( $from ) ) }, 
+        sub { ( $to ? scalar( localtime( $to ) ) : 'NOW' ) } );
+
+    my $stmt = 
+        "SELECT " .
+        "l.id as id, " .
+        "l.host as host, " .
+        "l.facility as facility, " .
+        "l.severity as severity, " .
+        "programs.name as prg, " .
+        "l.msg as msg, " .
+        "mne.name as mne, " .
+        "l.eid as eid, " .
+        "unix_timestamp(l.fo) as fo, " .
+        "unix_timestamp(l.lo) as lo " .
+        "FROM logs l " .
+        "LEFT JOIN programs on l.program = programs.crc " .
+        "LEFT JOIN mne on l.mne = mne.crc " .
+        "WHERE l.fo >= from_unixtime(?)";
+    if( $to ) {
+        $stmt .= " AND l.fo <= from_unixtime(?)";
+    }
+    $stmt .= " ORDER BY l.fo";
+    my $sth = $dbh->prepare( $stmt );
+    $sth->execute( $from, ( $to ? $to : () ) );
+
+    $dedup_by_key = {};
+    while( my $msg = $sth->fetchrow_hashref() ) {
+        $msg->{_exists_in_db} = 1;
+        $msg->{_dup_key} = _msg_dup_key( $msg );
+        $msg->{counter} = 0; # we do care only about what's new, not what was in DB
+        $dedup_by_key->{ $msg->{_dup_key} } = $msg; # if we get many, then put only last one
+    }
+
+    DEBUG( 1, "Dedup cache loaded (from=$from, to=$to)" );
+    DEBUG( 3, "Dedup cache: %s", sub { Dumper($dedup_by_key) } );
+    $log->INFO( "Dedup cache reloaded" );
+
+    $dedup_first = $from;
+    $dedup_last  = $to;
+}
+
+my $last_cache_cleanup = undef;
+
+# Remove entries which won't be used anymore (are older than newest one - 2 * DEDUP_WINDOW), 
+# and update $dedup_first respectively.
+sub clean_dedup_cache {
+
+    my $cleanup_period = $settings->{DEDUP_CLEANUP_PERIOD} || ( $settings->{DEDUP_WINDOW} / 2 );
+
+    if($last_cache_cleanup && ($last_cache_cleanup < time() - $cleanup_period)) {
+        DEBUG(2, "===== NOT CLEANING");
+        return;
+    }
+
+    DEBUG(2, "===== CLEANING");
+    $last_cache_cleanup = time();
+    
+    # First find min fo and max fo in dedup cache
+    my $min_fo = undef;
+    my $max_lo = undef;
+
+    for my $msg (values(%{$dedup_by_key})) {
+        if(!$min_fo || $msg->{fo} < $min_fo) {
+            $min_fo = $msg->{fo};
+        }
+        if(!$max_lo || $msg->{lo} > $max_lo) {
+            $max_lo = $msg->{lo};
+        }
+    }
+
+    # Now remove all messages older than $max_lo - 2 * DEDUP_WINDOW
+    my $fo_limit = $max_lo - $settings->{DEDUP_WINDOW} * 2;
+
+    my $deleted = 0;
+    for my $k (keys %{$dedup_by_key}) {
+        if($dedup_by_key->{$k}->{fo} < $fo_limit) {
+            delete($dedup_by_key->{$k});
+            $deleted++;
+        }
+    }
+    
+    $dedup_first = $fo_limit;
+    $log->INFO("After cleanup, dedup cache size: " . scalar(keys(%{$dedup_by_key})));
+}
+
+# For every duplicate replace all duplicates with counter equal to number of messages,
+# and fo/lo set respectively to ts from first/last message.
+# It considers also messages in the database, reading them as necessary (but trying hard to make
+# it in optimal way, especially when following calls are from consecutive date ranges).
+sub deduplicate {
+    my( @messages ) = @_;
+
+    return if ! @messages;
+
+    my( $min_ts, $max_ts );
+    $min_ts = $messages[0]->{fo};
+    $max_ts = $messages[0]->{lo};
+    for my $msg ( @messages ) {
+        $min_ts = $msg->{fo} if $msg->{fo} < $min_ts;
+        $max_ts = $msg->{lo} if $msg->{lo} > $max_ts;
+    }
+
+    # Now, if we are close to the current time, then set max_ts to 0 which means
+    # we want to load all records up to now.
+    if( time() - $max_ts < 2 * $settings->{DEDUP_WINDOW} ) {
+        $max_ts = 0;
+    }
+
+    # Get missing data from DB if needed
+    if( ! $dedup_first ||
+        $min_ts < $dedup_first - $settings->{DEDUP_WINDOW} ||
+        ( $dedup_last && $max_ts > $dedup_last ) ) {
+        $log->NOTICE( 'Missing data in deduplication cache, reloading...' );
+        load_deduplication_cache( 
+            $min_ts - $settings->{DEDUP_WINDOW}, 
+            $max_ts + 5 * $settings->{DEDUP_WINDOW},
+        );
+    }
+
+    for my $msg ( @messages ) {
+        $msg->{_dup_key} = _msg_dup_key($msg);
+    }
+
+    my @filtered = ();
+    my $filtered_by_key = {};
+    for my $msg ( @messages ) {
+        my $key = $msg->{_dup_key};
+       
+        my $prev = $dedup_by_key->{$key}; 
+        if( $prev && $msg->{fo} - $prev->{fo} <= $settings->{DEDUP_WINDOW} ) {
+            DEBUG( 5, "Msg '$msg->{msg}' - duplicate" );
+            # We fit in window, so only update prev occurence and skip duplicate,
+            # also add this message to filtered if not added yet
+            if( ! $filtered_by_key->{$key} ) {
+                $filtered_by_key->{$key} = 1;
+                push( @filtered, $prev );
+            }
+            $prev->{counter}++;
+            $prev->{lo} = max( $msg->{lo}, $prev->{lo} );
+        }
+        else {
+            # No duplicate, or it was behind dedup window - put new message in
+            # cache and in filtered messages.
+            DEBUG( 5, "Msg '$msg->{msg}' - non-dup, put first" );
+            $dedup_by_key->{$key} = $msg;
+            $filtered_by_key->{$key} = 1;
+            push( @filtered, $msg );
+        }
+    }
+
+    return @filtered;
+}
+
+# =================================================================================================
+# Helper functions 
+# =================================================================================================
+
+sub connect_to_db {
+    my $dbh = DBI->connect( $cfg->db_dsn, $cfg->db_user, $cfg->db_pass, 
+    { HandleError => sub { $log->ERR( $_[0] ); exit(1) } } );
+    $dbh->{TraceLevel} = $options->{dbi_debug};
+    # cdukes: removed below - doesn't work with normal user priv's
+    # $dbh->do('set global innodb_stats_on_metadata=0');
+    return $dbh;
+}
+
+sub log_mysql_warnings {
+    my( $dbh, $org_sth ) = @_;
+    my $sth = $prep_sth->{show_warnings};
+    $log->WARN( "MYSQL query [" . $org_sth->{Statement} . "] generated warnings:" );
+    $sth->execute();
+    while( my $r = $sth->fetchrow_arrayref() ) {
+        $log->WARN( "MYSQL: " . join( " ", @$r ) );
+    }
+}
+
+# Create hash with pairs of name => value for every row read from settings table
+sub read_settings_from_db {
+    my %settings;
+    my $sth = $dbh->prepare("SELECT name, value FROM settings");
+    $sth->execute();
+    while( my $r = $sth->fetchrow_arrayref ) {
+        $settings{$r->[0]} = $r->[1];
+    }
+    $settings{SNARE} = 0 if $settings{SNARE} != 1;
+    return \%settings;
+}
+
+sub setup_log {
+    my $log_dir = $settings->{PATH_LOGS};
+
+    # Create log dir, and build log path if not provided by command line option
+    if( ! -d $log_dir ) {
+        mkdir( $log_dir, 0755 ) or croak( "mkdir $log_dir: $!" );
+    }
+    if( ! $options->{log_file} ) {
+        $options->{log_file} = $log_dir . "/" . basename($0, '.pl') . '.log';
+    }
+
+    my $log_options = {};
+
+    # Set up output to file or both file and stderr
+    if( $options->{verbose} ) {
+        # make multiplexer FH sending data both to file and STDERR
+        open( my $fh, '>>:tee', $options->{log_file}, \*STDERR )
+            or croak( "$options->{log_file}: $!" );
+        $fh->autoflush(1);
+        $log_options->{fh} = $fh;
+    }
+    else {
+        open( my $fh, '>>', $options->{log_file} ) or croak( "$options->{log_file}: $!" );
+        $log_options->{fh} = $fh;
+    }
+
+    # Setup extra information to put in every log line, depending on debug level
+    if( $options->{debug} > 1 ) {
+        $log_options->{prefix} = "%D %T %S [%L] ";
+    }
+    else {
+        $log_options->{prefix} = "%D %T [%L] ";
+    }
+
+    $log_options->{level} = $options->{debug} > 0 ? 'DEBUG' : 'INFO';
+
+    $log->config( $log_options );
+
+    $SIG{__WARN__} = sub {
+        my $msg = shift;
+        $msg =~ s/\n//;
+        $log->WARN( $msg );
+    };
+    
+    $log->INFO( "Starting logging to $options->{log_file} with pid $$" );
+}
+
+sub DEBUG {
+    my( $level, @log_args ) = @_;
+    if( $options->{debug} >= $level ) {
+        $log->DEBUG( @log_args );
+    }
+}
+
+sub load_triggers {
+    my $sth = $dbh->prepare(
+        "SELECT id, pattern, mailto, mailfrom, subject, body " .
+        "FROM triggers WHERE disabled='No'"
+    );
+    $sth->execute();
+    my @triggers = ();
+    while ( my $row = $sth->fetchrow_hashref() ) {
+        # strip backslashes from stored patterns
+        # FIXME there's something wrong, probably this quotation comes from PHP and should be
+        #   removed before writing to the database - but take care of existing DB entries!
+        $row->{pattern} =~ s/\\(\'|\"|\\)/$1/g;
+        push( @triggers, $row );
+    }
+    return \@triggers;
+}
+
+sub trigger_mail {
+    my( $trigger, $host, $msg ) = @_;
+
+    my $pattern = $trigger->{pattern};
+
+    if ( $settings->{SNMP_SENDTRAPS} ) {
+        trap( $msg, $pattern );
+    }
+
+    # Replace each {N} with content of parens from pattern
+    my $subject = $trigger->{subject};
+    my $body = $trigger->{body};
+    my @vars = ( $msg =~ /$pattern/ ); # FIXME duplicated matching (we do it earlier already)
+    # cdukes: removed below for ticket #406
+    #$subject =~ s/\{(\d+)\}/$vars[$1+1]/ge;
+    #$body    =~ s/\{(\d+)\}/$vars[$1+1]/ge;
+    # cdukes #406 - added foreach below from original db_insert script
+    foreach my $var (@vars) {
+        $subject =~ s/\{\d+\}/$var/;
+        $body    =~ s/\{\d+\}/$var/; 
+    }                            
+    $subject = "[LogZilla Host $host]: $subject";
+
+    DEBUG( 1, "Mail trigger found:" );
+    DEBUG( 1, "Pattern = $pattern" );
+    DEBUG( 1, "Server = '" . $settings->{MAILHOST} ."'" );
+    DEBUG( 1, "Port = " . $settings->{MAILHOST_PORT} );
+    DEBUG( 1, "To = $trigger->{mailto}" );
+    DEBUG( 1, "From = $trigger->{mailfrom}" );
+    DEBUG( 1, "Subject = $subject" );
+    DEBUG( 1, "Body = $body" );
+    DEBUG( 1, "Message = $msg" );
+
+    # cdukes: removed block below for ticket #410
+    #my $mailmsg = MIME::Lite->new(
+    #From    => $trigger->{mailfrom},
+    #To      => $trigger->{mailto},
+    #Subject => $subject,
+    #Type    => 'TEXT',
+    #Data    => $body
+    #);
+    #
+    #my %args = ();
+    #if( $settings->{MAILHOST_USER} ) {
+    #$args{AuthUser} = $settings->{MAILHOST_USER};
+    #$args{AuthPass} = $settings->{MAILHOST_PASS};
+    #DEBUG( 1, "Mail User = " . $settings->{MAILHOST_USER} );
+    #DEBUG( 1, "Mail Pass = " . $settings->{MAILHOST_PASS} );
+    #}
+    #if( $options->{debug} ) {
+    #$args{Debug} = 1;
+    #}
+    #if( $settings->{MAILHOST_PORT} ) {
+    #$args{Port} = 1;
+    #}
+    #$mailmsg->send( 'smtp', $settings->{MAILHOST}, %args );
+
+    # cdukes: added block below for ticket #410
+    if( $settings->{MAILHOST_USER} ) {
+        MIME::Lite->send( 'smtp', $settings->{MAILHOST},
+            Port     => $settings->{MAILHOST_PORT},
+            Debug    => $options->{debug},
+            AuthUser => $settings->{MAILHOST_USER}, 
+            AuthPass => $settings->{MAILHOST_PASS}
+        );
+    } else {
+        MIME::Lite->send( 'smtp', $settings->{MAILHOST},
+            Port     => $settings->{MAILHOST_PORT},
+            Debug    => $options->{debug}
+        );
+    }
+
+    my $mailmsg = MIME::Lite->new(
+        From    => $trigger->{mailfrom},
+        To      => $trigger->{mailto},
+        Subject => $subject,
+        Type    => 'TEXT',
+        Data    => $body
+    );
+
+    $mailmsg->send();
+}
+
+# SNMP Forwarding
+sub trap {
+    my( $msg, $pattern ) = @_;
+
+    my @trapdests   = split( /,/, $settings->{SNMP_TRAPDEST} );
+    my @communities = split( /,/, $settings->{SNMP_COMMUNITY} );
+
+    DEBUG( 1, "Sending SNMP Trap for pattern match on /$pattern/, message was '$msg'" );
+
+    foreach my $dest (@trapdests) {
+        DEBUG( 2, "dest = $dest" );
+        foreach my $community (@communities) {
+            DEBUG( 2, "comm = $community" );
+            my ( $session, $error ) = Net::SNMP->session(
+                -hostname  => $dest,
+                -community => $community,
+                -port      => SNMP_TRAP_PORT,
+            );
+
+            if ( !defined($session) ) {
+                $log->ERR( "SNMP ERROR: %s.", $error );
+                exit(1);
+            }
+
+            my $result = $session->trap(
+                -enterprise   => '1.3.6.1.4.1.31337',
+                -generictrap  => 6,
+                -specifictrap => 1,
+                -varbindlist  => [
+                '1.3.6.1.4.1.31337.1.1', OCTET_STRING, "Original Message = $msg",
+                '1.3.6.1.4.1.31337.1.2', OCTET_STRING, "Matched Pattern = $pattern"
+                ]
+            );
+            if ( !$result ) {
+                $log->ERR( "SNMP ERROR for $dest/$community: $session->error" );
+            }
+            $session->close();
+        }
+    }
+}
+
+sub manage_db_partitions {
+    $log->INFO( "Managing partitions for logs table..." );
+    $dbh->do( "CALL manage_logs_partitions()" );
+}
+

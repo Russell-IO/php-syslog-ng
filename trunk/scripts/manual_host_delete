@@ -1,0 +1,178 @@
+#!/usr/bin/perl
+
+#
+#
+# Developed by Clayton Dukes <cdukes@logzilla.pro>
+# Copyright (c) 2012 logzilla.pro
+# All rights reserved.
+#
+# Changelog:
+# 2012-12-04 - created
+#
+
+use strict;
+
+$| = 1;
+use DBI;
+use Getopt::Long;
+
+my $dbhost     = 'localhost';
+my $dbport     = '3306';
+my $dbroot     = 'root';
+my $dbrootpass = 'mysql';
+my $db         = 'syslog';
+my (@hosts, @cleanup);
+
+# Command line options
+my $options = {
+    verbose => 0,
+    help    => 0,
+    host    => "",
+    logsonly    => 0,
+};
+
+sub usage_and_exit {
+    my ($exit_code) = @_;
+    my $myname = $0;
+    $myname =~ s{.*/}{};    # leave just program name without path
+    print STDERR qq{
+Please edit this file and change the variables at the top for user, password, etc.
+This program is used to delete hosts from LogZilla v4.x 
+This script will DELETE data from your DB, so make a backup first.
+
+
+Usage: $myname [-hv -host] 
+-h        : this (help) message
+-v        : Also print results to STDERR
+-host     : host(s) to remove from the DB, e.g.: -host 'host1' -host 'host2'
+-logsonly : Just delete from logs table and leave all other data (don't use this)
+Example: ./$myname -v -host 'host1' -host 'host2'
+};
+    exit($exit_code);
+}
+
+GetOptions(
+    'help|h!'    => \$options->{help},
+    'verbose|v!' => \$options->{verbose},
+    'host=s'     => \@hosts,
+    'logsonly|l=i'     => \$options->{logsonly},
+) or usage_and_exit(1);    # got some invalid options
+
+if ( $options->{help} ) {
+    usage_and_exit(0);
+}
+
+my $dbh = DBI->connect( "DBI:mysql:$db:$dbhost:$dbport", $dbroot, $dbrootpass )
+  or die "Couldn't connect to database: " . DBI->errstr;
+my $sel_hosts = $dbh->prepare('SELECT * FROM hosts WHERE host = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+my $sel_logs = $dbh->prepare('SELECT * FROM logs WHERE host = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+my $sel_prgs = $dbh->prepare('SELECT * FROM programs WHERE crc = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+my $sel_mnes = $dbh->prepare('SELECT * FROM mne WHERE crc = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+my $del_logs = $dbh->prepare('DELETE FROM logs WHERE host = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+
+foreach my $hostname (@hosts) {    # Read input from the user
+    my @logs;
+    my @prgs;
+    my @mnes;
+    chomp $hostname;
+    if ( $options->{logsonly} > 0 ) {
+        print "Deleting '$hostname' from the Logs table\n" if ( $options->{verbose} );
+        $dbh->do("DELETE FROM logs WHERE host='$hostname'");
+    } else {
+        $sel_logs->execute($hostname)
+          or die "Couldn't execute statement: " . $sel_logs->errstr;
+
+        print "Getting info from logs table, be patient...\n" if ( $options->{verbose} );
+        while ( @logs = $sel_logs->fetchrow_array() ) {
+            my $logs_id       = $logs[0];
+            my $logs_hostname = $logs[1];
+            my $logs_prg_crc  = $logs[4];
+            my $logs_mne_crc  = $logs[6];
+            my $logs_seen     = $logs[9];
+
+            # Clean up programs
+            $sel_prgs->execute($logs_prg_crc)
+              or die "Couldn't execute statement: " . $sel_prgs->errstr;
+            while ( @prgs = $sel_prgs->fetchrow_array() ) {
+                my $prgs_id   = $prgs[0];
+                my $prgs_name = $prgs[1];
+                my $prgs_crc  = $prgs[2];
+                my $prgs_seen = $prgs[3];
+                print "Checking Programs table for '$prgs_name' entries...\n" if ( $options->{verbose} );
+                if ( $prgs_seen > 1 ) {
+                    print "Updating Program count for $prgs_name\n" if ( $options->{verbose} );
+                    $dbh->do("UPDATE programs SET seen = seen - 1 WHERE id='$prgs_id'");
+                } else {
+                    print "Deleting '$prgs_name' from the Programs table\n" if ( $options->{verbose} );
+                    $dbh->do("DELETE FROM programs WHERE id='$prgs_id'");
+                }
+            }
+
+            # Clean up mne's
+            $sel_mnes->execute($logs_mne_crc)
+              or die "Couldn't execute statement: " . $sel_mnes->errstr;
+            while ( @mnes = $sel_mnes->fetchrow_array() ) {
+                my $mnes_id   = $mnes[0];
+                my $mnes_name = $mnes[1];
+                my $mnes_crc  = $mnes[2];
+                my $mnes_seen = $mnes[3];
+                print "Checking Mnemonics table for '$mnes_name' entries...\n" if ( $options->{verbose} );
+                if ( $mnes_seen > 1 ) {
+                    print "Updating Mnemonic count for $mnes_name\n" if ( $options->{verbose} );
+                    $dbh->do("UPDATE mne SET seen = seen - 1 WHERE id='$mnes_id'");
+                } else {
+                    print "Deleting '$mnes_name' from the Mnemonics table\n" if ( $options->{verbose} );
+                    $dbh->do("DELETE FROM mne WHERE id='$mnes_id'");
+                }
+            }
+
+            # Clean up hosts
+            $sel_hosts->execute($logs_hostname)
+              or die "Couldn't execute statement: " . $sel_hosts->errstr;
+            while ( @hosts = $sel_hosts->fetchrow_array() ) {
+                my $hosts_id   = $hosts[0];
+                my $hosts_name = $hosts[1];
+                my $hosts_crc  = $hosts[2];
+                my $hosts_seen = $hosts[3];
+                print "Checking Hosts table for '$hosts_name' entries...\n" if ( $options->{verbose} );
+                if ( $hosts_seen > 1 ) {
+                    print "Updating Hosts count for $hosts_name\n" if ( $options->{verbose} );
+                    $dbh->do("UPDATE hosts SET seen = seen - 1 WHERE id='$hosts_id'");
+                } else {
+                    print "Deleting '$hosts_name' from the Hosts table\n" if ( $options->{verbose} );
+                    $dbh->do("DELETE FROM hosts WHERE id='$hosts_id'");
+                }
+            }
+
+#print "Checking Logs table for '$logs_hostname' entries...\n" if ($options->{verbose});
+            if ( $logs_seen > 1 ) {
+                print "Updating Log count for $logs_hostname\n" if ( $options->{verbose} );
+                $dbh->do("UPDATE logs SET counter = counter - 1 WHERE id='$logs_id'");
+            } else {
+                print "Deleting '$logs_hostname' from the Logs table\n" if ( $options->{verbose} );
+                $dbh->do("DELETE FROM logs WHERE id='$logs_id'");
+            }
+        }
+        if ( $sel_logs->rows == 0 ) {
+            print "`$hostname' was not found in the $db database.\n\n" if ( $options->{verbose} );
+            push( @cleanup, "$hostname" );
+        }
+    }
+
+    $sel_logs->finish;
+    $sel_prgs->finish;
+    $sel_mnes->finish;
+}
+
+# additional cleanup in case the hosts are in hosts table but not in the logs table
+foreach my $h (@cleanup) {
+    print "Deleting '$h' from the Hosts table\n" if ( $options->{verbose} );
+    $dbh->do("DELETE FROM hosts WHERE host='$h'");
+}
+
+$dbh->disconnect;

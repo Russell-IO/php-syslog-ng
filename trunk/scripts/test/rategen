@@ -1,0 +1,26 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+
+use FindBin;
+use Find::Lib qw(../../lib);
+use Cwd qw(abs_path);
+use File::Temp qw(tempdir);
+use Time::HiRes qw(gettimeofday tv_interval);
+
+use LogZilla::Config;
+use LogZilla::RateMeter;
+
+my $ROOT_DIR = abs_path( $FindBin::Bin . "/../.." );
+my $cfg = LogZilla::Config->new( path => "$ROOT_DIR/html/config/config.php" );
+
+my $meter = LogZilla::RateMeter->new( config => $cfg );
+
+$|=1;
+my $t0 = time();
+print "Filling archive with data";
+for my $ts ( 0 .. 60*60*24*10 ) {
+    print "." if (($ts % (60*60)) == 0);
+    print "O" if (($ts % (60*60*24)) == 0);
+    $meter->update( sin( $ts / 3600 ), $t0 + $ts );
+}

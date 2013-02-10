@@ -1,0 +1,20 @@
+
+To install LogZilla, simply change to the scripts/ directory and run the install.pl script.
+
+Useful Links:
+
+LICENSES (both commercial and free)
+ - http://www.logzilla.pro
+
+Installation Guide
+ - http://nms.gdd.net/index.php/Install_Guide_for_LogZilla_v3.2
+
+Forum:
+ - http://forum.logzilla.pro
+
+Please be sure to join the forum for announcements - http://forum.logzilla.pro
+Alternatively, you can join the Google email list by sending an email to php-syslog-ng-support+subscribe@googlegroups.com
+
+This software is made available to end users under two licenses: 
+A free, open-source version and a commercial version. 
+For inquiries about purchasing a commercial license, please visit http://www.logzilla.pro or email cdukes@logzilla.pro

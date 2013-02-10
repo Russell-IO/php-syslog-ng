@@ -1,0 +1,61 @@
+
+CHANGELOG
+
+Summary of changes from LogZilla v3.2 to v4.0
+For a detailed list of changes, please see the CHANGELOG.detailed file.
+
+
+Installation:
+ - The LogZilla installation guide is located at:
+   http://docs.logzilla.pro
+
+Upgrading:
+ - The LogZilla installation now fully supports all upgrades (including the old php-syslog-ng v2.9x series).
+   To upgrade, cd to your scripts/ directory and type ./upgrade
+
+
+
+There are several hundred enhancements and updates since v3.2 was released. 
+For a full listing of all changes, please see the CHANGELOG.detailed file.
+
+New Feature: Role-Based Access Control (RBAC)
+ - This allows administrators to specify which users have access to groups of hosts.
+New Feature: SNMP Trap Forwarding
+ - Users licensed for "Email Alerts" can now specify an SNMP trap destination as well.
+New Feature: Auto-Archiving
+ - All logs older than a specified retention level get automatically archived to disk
+ - Archives can also be re-imported at any time through the Web User Interface
+New Feature: Auto-Licensing
+ - If the admin orders a license prior to installation, the server will automatically install it.
+New Feature: Unattended Install
+ - Admins can now use an answer file to pre-answer all installation questions.
+New Feature: JavaScript-Based Charts
+ - Adobe Flash is no longer needed to run LogZilla. Enjoy your iPad!
+New feature: Audit Trail
+ - Logged in user actions can now be logged to File, DB or to the Syslog Daemon.
+New Feature: Time Slider
+ - Search Results can be further refined by using a slider control at the top of the results page.
+New Feature: Post-Search Filtering
+ - Search Results can be further refined using a post-search filter
+
+Enhancements:
+Redesigned Nav Menu
+Redesigned Admin Menu
+Redesigned Deduplication function provides much faster messages processing
+Redesigned UI
+Redesigned Web UI Messaging/Notifications
+Redesigned Results Grid
+Redesigned Tail Mode Grid
+Redesigned MySQL Tables
+Redesigned Back-end Sphinx Indexer
+Major Code Cleanup
+Added Upgrade Capability for All Old Versions
+Install Now Handles All Code Compile as Well as IONCube Install
+Added Automatic Detection and Installation of Missing Perl Modules During Installation/Upgrade
+
+Updates:
+Updated Sphinx Source to v2.02
+Updated JQuery to v1.7.1
+Updated JQueryUI to v1.8.16
+
+

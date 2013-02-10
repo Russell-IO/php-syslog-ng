@@ -1,0 +1,42 @@
+#------------------# 
+# basic properties # 
+#------------------# 
+$dbroot = "root"; 
+$dbrootpass = "mysql"; 
+$dbname = "syslog"; 
+$dbhost = "localhost"; 
+$dbport = "3306"; 
+$dbadmin = "syslogadmin"; # DO NOT USE ROOT HERE OR YOU WILL LOSE DB PERMISSIONS ON OTHER DB'S!
+$dbadminpw = "syslogadmin"; 
+$siteadmin = "admin"; 
+$siteadminpw = "admin"; 
+$email = "cdukes\@logzilla.pro"; 
+$sitename = "LogZilla Lab Server"; 
+$url = "/"; 
+$logpath = "/var/log/logzilla"; 
+$retention = "7"; 
+$snare = "Y";
+$syslogng_conf = "/etc/syslog-ng/syslog-ng.conf";
+$syslogng_source = "s_all";
+$webuser = "www-data";
+#------------------# 
+# Auto-answer      # 
+# Answer Yes to all prompts (except license)
+# Use at your own risk!
+#------------------# 
+$autoyes = "Y";
+
+#------------------# 
+# Skip section options
+# This may mess up the installation of you haven't already installed
+# The dev teams use this to avoid having to set up everything repeatedly during testing
+#------------------# 
+$skipdb = "N";
+$skipcron = "N";
+$skipsysng = "N";
+$skiplogrot = "N";
+$skipsudo = "N";
+$skipfb = "N";
+$sphinx_compile = "Y";
+$sphinx_index = "Y";
+$skip_ioncube = "N";

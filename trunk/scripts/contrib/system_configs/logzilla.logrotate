@@ -1,0 +1,14 @@
+# http://www.logzilla.pro
+# LogZilla logrotate snippet for Ubuntu Linux
+# contributed by Clayton Dukes
+# Last updated on 2010-06-15
+#
+/path_to_logs/*.log {
+  missingok
+  compress
+  rotate 5
+  daily
+  postrotate
+  /bin/kill -HUP `cat /var/run/syslog-ng.pid 2> /dev/null` 2> /dev/null || true
+  endscript
+}

@@ -1,0 +1,7 @@
+This script will email generated excel reports to the specified recipient
+You'll need to edit the file and set the variables where I marked:
+
+####### MODIFY below to suit your needs ##############
+
+You'll also need curl and the perl module "MIME::Lite"
+

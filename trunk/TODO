@@ -1,0 +1,18 @@
+List of things to be done, regarding log_processor:
+
+01. Join all configuration objects in one - that is, extend Config class to support command
+    line parameters and table 'settings'. Maybe convert PHP config to some *.ini file, then
+    just leave DB credentials there and move everyting other to the 'settings' table.
+
+02. Split script into separate modules: log parser, data savers (this could be splitted even more
+    into separate modules for message rate, logs and counters), and triggers. Then create one 
+    module to manage the above. This is introduction to the paralell processing
+
+03. Implement paralell processing (provided task 02 is done) - have separate threads 
+    for parsing, saving data to different parts of storage, and triggers.
+
+04. Prepare unit tests for parser module - check only input/output that is - for given input line
+    expect given hash with proper fields.
+
+05. Having 04 done, implement new, faster parser module - probably as an XS, maybe with some
+    external rules defined in configuration file(s), so it can be easily extended with new cases.

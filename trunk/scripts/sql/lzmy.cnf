@@ -1,0 +1,6 @@
+[logzilla]
+user = syslogadmin
+password = syslogadmin
+host = localhost
+port = 3306
+database = syslog

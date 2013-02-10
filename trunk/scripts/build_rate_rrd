@@ -1,0 +1,136 @@
+#!/usr/bin/perl 
+
+# $Id$
+# Developed by Clayton Dukes <cdukes@logzilla.pro>, Piotr Piatkowski <pp@idea7.pl>
+# Copyright (c) 2009-2012 LogZilla, LLC
+# All rights reserved.
+#
+# Read records from table 'logs', and create new RRD file with data reconstructed from 
+# those data. All events are accounted to the timestamp set in their 'lo' (last occurence)
+# column, so if we were using deduplication result can be a little inaccurate.
+
+use strict;
+use warnings;
+
+use FindBin;
+use Find::Lib qw(../lib);
+use Cwd qw(abs_path);
+use Getopt::Long;
+use DBI;
+use POSIX;
+
+use LogZilla::Config;
+use LogZilla::RateMeter;
+
+my $ROOT_DIR = abs_path("$FindBin::Bin/..");
+
+# Command line options
+my $options = {
+    verbose => 0,
+    config_file => "$ROOT_DIR/html/config/config.php",
+    force => 0,
+    days => 0,
+    help => 0,
+};
+
+sub usage_and_exit {
+    my( $exit_code ) = @_;
+
+    my $myname = $0;
+    $myname =~ s{.*/}{}; # leave just program name without path
+
+    # TODO sync this with getopt
+    print STDERR qq{
+This program is used to create new rate.rrd file based on data in database, table logs.
+It reads all records, then account number of records with given 'lo' (last occurence)
+time stamps, and put it into RRD file.
+
+Usage: $myname [-hv] [-c config_file] -d days
+    -h        : this help message
+    -v        : be verbose
+    -f        : overwrite file if it exists
+    -d        : number of days to get data for, i.e. "-d 90" loads last 90 days
+    -c        : config file (defaults to $options->{config_file})
+};
+    exit($exit_code);
+}
+
+GetOptions(
+    'help|h!'              => \$options->{help},
+    'verbose|v!'           => \$options->{verbose},
+    'force|f!'             => \$options->{force},
+    'days|d=i'             => \$options->{days},
+    'config-file|c=s'      => \$options->{config_file},
+) or usage_and_exit(1); # got some invalid options
+
+if( $options->{help} || ! $options->{days} ) {
+    usage_and_exit(0);
+}
+
+my $cfg = LogZilla::Config->new( path => $options->{config_file} );
+my $dbh = DBI->connect( $cfg->db_dsn, $cfg->db_user, $cfg->db_pass, { RaiseError => 1 } );
+
+my $query = 
+    "SELECT unix_timestamp(lo), sum(counter) " .
+    "FROM logs " .
+    "WHERE fo > DATE_SUB( NOW(), INTERVAL ? DAY) " .
+    "GROUP BY lo " .
+    "ORDER BY lo";
+
+verbose("Querying database (it can take some time)");
+
+my $sth = $dbh->prepare($query);
+$sth->execute($options->{days});
+
+my $r0 = $sth->fetchrow_arrayref();
+
+if( ! $r0 ) {
+    print STDERR "No data found for last " . $options->{days} . " days\n";
+    exit(1);
+}
+
+my( $ts, $count ) = @{$r0};
+verbose( "First timestamp is for " . POSIX::strftime("%Y-%m-%d %H:%M:%S", localtime($ts)) );
+
+my $rate_meter = LogZilla::RateMeter->new( config => $cfg, start_time => $ts - 10 );
+my $rrd_path = $rate_meter->rrd_path;
+if( -f $rrd_path ) {
+    if( $options->{force} ) {
+        unlink( $rrd_path ) or croak( "unlink $rrd_path: $!" );
+    }
+    else {
+        print STDERR "File $rrd_path already exists, use -f to overwrite\n";
+        exit(1);
+    }
+}
+
+$rate_meter->update( $count, $ts );
+
+my $last_ts = $ts;
+verbose( "Processing day " . strftime("%Y-%m-%d",localtime($ts)) );
+while( my $r = $sth->fetchrow_arrayref() ) {
+    ( $ts, $count ) = @{$r};
+
+    for my $t ( ( $last_ts + 1 ) .. ( $ts - 1 ) ) {
+        put_data( $t, 0 );
+    }
+    put_data( $ts, $count );
+    $last_ts = $ts;
+}
+
+verbose( "All done!" );
+
+sub put_data {
+    my( $ts, $count ) = @_;
+    if( $ts % ( 24*60*60 ) == 0 ) {
+        verbose( "Processing day " . strftime( "%Y-%m-%d", localtime( $ts ) ) );
+    }
+    $rate_meter->update( $count, $ts );
+}
+
+sub verbose {
+    my( $msg ) = @_;
+    if( $options->{verbose} ) {
+        print "$msg\n";
+    }
+}
