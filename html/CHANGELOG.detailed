@@ -1,0 +1,3309 @@
+4.5.606 - Multiple Updates 
+CD:
+ - #414 - Added Multi-core indexing (since rev 587)
+ - $426 - Split result sets to 1500 per query (was 100)
+ - #407 - Fixed RBAC bug (using host_crc now instead of host)
+ - #420 - Wildcard searches now use dict keywords (less disk space)
+ - #405 - All tests pass except t/log_processor/12-dedup-cache-cleaning.t
+ - #375 - Moved all maintenance functions out of the MySQL scheduler to a nightly syncDB script
+
+4.xx.566 [Trunk] - bugfix 
+TH:
+ - small bug in sphinx.conf
+ 
+ 4.xx.564 [Trunk] - Adding Multicore indexing support 
+TH:
+ - Merge from test server
+ - limit MEM_LIMIT on sphinx to 256MB, every forked index use this memory
+ - Daily rotation and indexing still don't work
+ 
+4.xx.558 [Sphinx Branch]
+CD:
+ - #404 Implementation of 1/4 hour indexing
+ - #412 Implementation of syncDB (MySQL updateCache replacement) 
+ - #412 Added logging and removed hard-coded mysql connect params
+ - Added logging to t/showcounts
+ - Fixed invalid PID test in indexer.sh
+ - Removed sphinx/var from svn as it is created during install
+
+4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - try to fix the bug with incorrect count(*) and sum(counter) at sphinx (Point 5) 
+ - todo: testing, testing, testing 
+ 
+4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - small bogus on install empty qrhr views 
+ - todo: testing, testing, testing 
+ 
+4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - small bogus on install due sph_counter table change 
+ - todo: testing, testing, testing 
+ 
+ 4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - try to fix the race condition for generating new views while indexer is still running 
+ - todo: testing, testing, testing
+ 
+ 4.xx [Sphinx Branch] - Patches for bug #404  
+TH:
+ - initial seed of hr_views and qrhr views with no data 
+ - todo: testing, testing, testing
+ 
+ 4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - Adapt db event times to avoid race conditions 
+ - todo: testing, testing, testing
+
+4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - Adapt indexer.sh and sphinx.conf 
+ - todo: testing, testing, testing
+
+4.xx [Sphinx Branch] - Patches for bug #404 
+TH:
+ - Ticket:#404: Points 1,3 (and implicit 2) and 4. 
+ - todo: adapt the sphinx/indexer.sh
+
+4.25.351 [Main Branch] - manage partitions improvement
+PP:
+ - Disabled innodb_stats_on_metadata - it should make manage_logs_partitions much faster
+ - Improved info message about adding missing partitions.
+
+4.25.349 [Main Branch] - Procedures bug
+CD:
+ - Added update_procs call to make_partitions.
+
+4.25.347 [Main Branch] - Sphinx
+CD:
+ - Updated Main branch Sphinx.conf (s_logs) for ticket:389
+ - Changed sphinx.conf sql_range_step to 3000 as it performs a bit better
+
+4.25.345 [Main Branch] - Sphinx
+CD:
+ - Workaround for ticket:387 (max_id value in the cache table)
+
+4.25.342 [Main Branch] - Partitioning
+CD:
+ - Fixed #379, #378 /Added partition creation event to log_processor
+
+4.25.504 - Bug
+CD:
+ - Fix #369 - Missing partition auto-create fails on month boundaries
+
+4.25.504 - Bug
+CD:
+ - #381 - Fix for css Prev/Next bug
+
+4.25.494 - Install
+CD:
+ - Possible fix for error 13 (permission denied to /tmp) during first test
+
+4.25.493 - Kickstart
+CD:
+ - Added kickstart script for Ubuntu Server 12.04.1 LTS
+
+4.0.492 - Testing
+CD:
+ - Modified install to use genlog for first test instead of printf
+
+4.0.491 - Autoinstall
+CD:
+ - Fixed autoyes and eula in install.pl
+
+4.0.490 - Beta tests
+CD:
+ - Added tests located in t/log_processor to install.pl
+ - #380 Worked on MySQL LOCAL INFILE in install.pl (still not working)
+
+4.0.487 - Merge RRD branch to Beta branch
+CD:
+ - Updated install dependencies for new code branch
+
+4.0.406 - Bugfix
+CD:
+ - #358 - Import status not updating correctly.
+
+4.0.403 - Bugfix
+CD:
+ - #348 - Portlet admin button clicks not working
+
+4.0.394 - Bugfix
+CD:
+ - Typo in db_insert caused messages to lose their program names.
+
+4.0.390 - Bugfix
+CD:
+ - Looks like the patch for #339 broke the patch for #338. This resolves both.
+
+4.0.389 - Bugfix
+CD:
+ - #339 - Fix for French Snare Agent and non-printing charsets
+ 
+4.0.388 - Bugfix
+CD:
+ - #338 - Some email addresses get translated as html entities
+
+4.0.388 - Bugfix
+CD:
+ - #338 - Some email addresses get translated as html entities
+
+4.0.387 - Bugfix
+CD:
+ - #337 - Removing access for hosts should set that host back to RBAC key 1
+
+4.0.386 - Bugfix
+CD:
+ - #336 - Long URI caused apache error on $get for rbac.
+
+4.0.385 - Release Version
+CD:
+ - Set version to 4.0. So many enhancement that we're updating this to 4.0 rather than 3.3 (isn't that awesome? :-))
+
+3.3.382 - Various
+CD:
+ - #323 - Updated help menu links
+ - #328 - Added doc ready for click action
+ - #332 - Duplicate LDAP CN in menu
+ - #333 - Misspelled "autentication" in help menu
+ - #334 - SPX_ADV no longer needed
+ - #335 - Added notify function to portlet-rbac
+
+3.3.378 - SNMP Trap Forwarding
+CD:
+  - #330 - Added a basic trap forwarding mechanism.
+
+3.3.377 - Minor
+RN:
+ - #313 added hup_syslog() at end of do_upgrade()
+ - bash_aliases cleanup
+
+3.3.376 - Minor
+RN:
+ - #310 added apache sanity check, changed aliases file name
+
+3.3.375 - Minor
+CD:
+ - #317 Updated About Page
+ - #317 Updated favicon
+ - #317 Updated menu image
+ - #318 Better handling of invalid text in message field.
+ - #319 - use rawurlencode for program names in qstring
+
+3.3.370 - Minor
+TH:
+ - more work on import/export stuff
+ 
+CD:
+ - Cleaned up install/upgrade script
+ - Better handling of upgrades for both current and old versions.
+ - #314 Upgrade should not overwrite configured RBAC groups
+ - #315 Upgrade causes all archive information to be lost.
+
+3.3.363 - Minor
+TH:
+ - bugfixing hidden column in hosts, mne, eid and programs table
+
+3.3.362 - nightly updates
+TH:
+ - nightly updates now done by centralized cleanup() function. It does 
+ 	* corrects "seen", "lastseen" and "hidden" for host, mne and eid tables
+ 	* corrects "seen", "lastseen" and "hidden" for programs tables (*new*)
+ 	* drops search results views
+   updateEid, updateHosts and updateMne function and events no more needed.
+   
+3.3.361 - Minor
+TH:
+ - due hourly views cron can always run every minute for indexer.sh delta
+
+3.3.360 - Minor
+TH:
+ - fix $dbtable parameter for export procedure in install.pl
+
+3.3.359 - Minor
+CD:
+ - Cleanup: Removed Levenshtein call from scripts
+
+3.3.358 - Multiple
+CD:
+ - Updated logreplay to use pure perl instead of having to compile a spoofer
+ - #154 Fixed deduplication in db_insert
+ - Major code cleanup of db_insert
+ - #161 Removed logs table triggers and moved the calculations to db_insert
+ 
+3.3.346 - Indexer
+TH:
+ - Fix #308 - Sphinx not indexing all events
+ 
+3.3.345 - Export
+TH:
+ - export do not need reindex sphinx
+
+3.3.344 - Export
+TH:
+ - Changes and rollback in the export function (see comment)
+ 
+3.3.343 - Indexer
+CD:
+ - Fix #308 - Sphinx delta not indexing all events
+ - Change of partition detection select query in db_insert (faster method)
+
+3.3.341 - MPx Charts
+CD:
+ - Fixes for unrendered charts.
+
+ - Changed keywords to be more descriptive:
+3.3.336 - .lzrc
+CD:
+ - Changed keywords to be more descriptive:
+$sphinx_compile = "N";
+$sphinx_index = "N";
+
+CD:
+3.3.335 - Minor
+CD:
+ - Added option to not re-index sphinx during install/upgrades
+ - add to .lzrc:
+$compilesphinx = "N";
+$reindexsphinx = "N";
+
+3.3.333 - Multiple
+CD:
+ - Typo on test message date
+ - Update on settings for excel headers
+
+
+3.3.332 - Cosmetic
+CD:
+ - Fix #307 - Change "Home" to "Return to Main Search Page" on menu
+
+3.3.331 - Bugfix
+CD:
+ Fix #305 - Missing import for LWP::Simple
+ Fix #306 - Sphinx doesn't index until the DB has messages.
+
+3.3.330 - Export Functions
+CD:
+ - Added Excel export functions to results table (print icon)
+
+3.3.329 - Installation
+CD:
+ - Added automatic Perl Module install when user's system is missing them
+
+3.3.328 - Bug
+CD:
+ - Fix for #304 - Uncaught SyntaxError: Unexpected token , when searching
+
+3.3.327 - Multiple
+CD:
+ - Fixed typo in db_insert
+ - Fix for #262 pie drills unable to distinguish between duplicate named facilities (int 4 and 10 have the same name as defined in the RFC).
+ - Fix for #302 - lost click functions on user admin page
+ - Fix for #284: When no auth is used, rbac fails
+ - Fix for #285 - RBAC: Allow admin to set default host view for new users
+ - Fixed missing clasing </table> tag in the about portlet
+
+3.3.326 - Multiple
+CD:
+ - Fix for #299 Boolean query fail using normal tail mode
+ - Updated Grid libraries
+
+3.3.324 - Bug
+CD:
+ - Fix for #297 - logs_del_partition uses incorrect table name
+
+3.3.323 - Multiple
+CD:
+ - Fix for #288 - Explode error on non-array variable.
+ - Fix for #290 - uninstall does not clean up rc.local
+
+3.3.321 - Documentation
+CD:
+ - Modifed help system for new version. (still needs some work)
+
+3.3.318 - Multiple
+CD:
+ - Removed unnecessary content placeholder from the adminmenu
+
+3.3.317 - Multiple
+CD:
+ - Replaced login logo
+ - Fixed save icons not working on search and graph portlets
+
+3.3.316 - Bug
+CD:
+ - Fix for #294 - Large amount of hosts causes tail mode to fail 
+
+3.3.315 - Minor
+CD:
+ - Removed unused jGrowl libraries
+
+3.3.314 - Multiple
+CD:
+ - Minor fixes to the 3.10 update
+ - Added placeholder text for the messages search box
+ - Removed QTip
+
+3.3.310 - Multiple
+CD:
+ - Fixed positioning of admin menu dialog boxes.
+ - Modified MPx charts to be one per page instead of all on one page...didn't scale well.
+ - Modified ui_layout pagename column type from enum to varchar.
+ - Changed main menu top nav bar to a better one.
+ - Repositioned EPS Ticker and set it to only run on the main page.
+ - Replaced messaging with a much cleaner top bar message
+
+3.3.308 - RBAC Bug
+CD:
+ - Fix for #293 - Bug in RBAC 2^31 Groups
+
+3.3.307 - Minor
+CD:
+ - Added a small support collection script in scripts/
+
+3.3.306 - RBAC
+CD:
+ - Fix for array on groups (should be array not string)
+
+3.3.305 - Sphinx
+CD:
+ - fix for max_id error during sphinx indexing
+
+3.3.304 - Sphinx
+CD:
+ - Modified both install and uninstall so that clearing the db and/or upgrades would not screw up the sph_counters
+ - Added scripts/tools/checkmem.sh which will show server memory and Sphinx's index usage.
+ - Modified location of license.txt so that index.php looks in the current directory instead of ../
+
+3.3.301 - Misc
+CD:
+ - Added scroll option to the datatable for long messages
+ - Updated db_insert to try makepart for missing partitions on VMs
+
+3.3.296 - Licensing
+CD:
+ - Added note about Apache restart on new license install
+
+3.3.295 - Archival
+CD:
+ - Modified import script to remove archives from disk after import.
+
+3.3.294 - Archival
+CD:
+ - Modifed export procedure to use RETENTION value from settings
+ - Added record drop for archived data that was exported
+ - NOTE: All data OLDER than $RETENTION is now exported and dropped from the DB.
+
+3.3.293 - Archival
+CD:
+ - Modified export.sh so that missing $r and already existing gzips would not cause shell to hang.
+ - Small fix for missing html input close tag > in portlet-programs
+
+3.3.292 - Minor
+CD:
+ - Change write for license.txt to the html directory so that the web ui matches.
+
+3.3.291 - Sphinx
+CD:
+ - Possible charset fix for * searching
+ - Upgraded Sphinx source code to v2.0.3 Release
+
+3.3.286 - Bug
+CD:
+ - #291 Re-added dot charset "U+2E" to sphinx.conf. Searches now use wildcards.
+
+3.3.285 - Bug
+CD:
+ - #291 Removed dot charset from sphinx.conf to fix invalid search on ip address and dot-named hosts.
+
+3.3.284 - Bug
+CD:
+ - #280 Fix for view creation when username contains a period.
+
+3.3.283 - Cosmetic
+CD:
+ - #272 Set hard limit of 10 max results when tailing.
+
+3.3.282 - Remove Google Code tracker
+CD:
+ - Remove Google Code tracker
+
+3.3.281 - Charts
+WG:
+ - Work on MPx click
+
+3.3.280 - Bugfix
+TH:
+ - Fix #284: dirty rbac fix for AUTHTYPE = "none"
+
+3.3.279 - Bugfix
+CD:
+ - Fix #10 for table views not cleaning up after $retention has been met
+
+3.3.276 - MPx
+WG:
+ - Minor update for MPx charts
+
+3.3.275 - Tools
+CD:
+ - Added a 'tools' directory to scripts/ for mysqltuner and system summary
+
+3.3.274 - Multiple
+CD:
+ - #10 Built new UI for import function 
+ - Fix for #286 (Call to undefined method jqGridDB)
+
+3.3.273 - Cosmetic
+CD:
+ - Added "events" to MPX tooltips
+
+3.3.272 - Cosmetic
+WR:
+ - Cosmetic improvements for MPx labels (2nd update)
+
+3.3.271 - Cosmetic
+WR:
+ - Cosmetic improvements for MPx labels
+
+3.3.270 - Bugfix
+CD:
+ - Fix for #282 Bar and Line charts display incorrect x, y and x-axis labels
+
+3.3.269 - Bugfix
+CD:
+ - Fix for #279 Warning: explode() expects parameter 2 to be string, array given in portlet_header.php...
+
+3.3.268 - Bugfix
+CD:
+ - Fix for #278 When no events, charts fail and display php error
+
+3.3.267 - Minor
+CD:
+ - Added link to refresh license after expiration
+ - Quell error for invalid mac in lic.php
+
+3.3.266 - Minor
+CD:
+ - Updated aboutus page email contact
+ - Added better error checking for invalid/corrupt licenses
+ - Added line flush for db_insert debug logs
+
+3.3.265 - Bugfix
+TH:
+ - #274 - Bugfixing the $where clause
+
+3.3.264 - Bugfix
+CD:
+ - Error check on sphinx connection for imports
+
+3.3.263 - Bugfix
+CD:
+ - Better error check for Column checks during upgrades (install.pl)
+
+3.3.262 - Bugfix
+TH:
+ - #274 - tail use like on msg in sql query
+ - #271 - another fix in where clause on hosts
+
+3.3.261 - Bugfix
+CD:
+ - #190 - Commented stty out of install.
+ - #273 - Fixed typo in email alerts help text
+ - #272 - Removed non-used options from tail page (paginate, slider, etc.)
+
+3.3.260 - Bugfix
+TH:
+ - #271: portlet-headers.php: review creating the $where clause
+ 
+ 3.3.259 - Bugfix
+TH:
+ - small bugfix in creating the view; use hour in 24h format
+ 
+ 3.3.258 - Bugfix
+TH:
+ - #264 (again) Tail now hardcoded id desc (function fireit() portlet-table.php line 260)
+
+3.3.257 - Bugfix
+TH:
+ - #264 Tail create a view based on the where clause and not on the sphinx result (sphinx results never been refreshed)
+
+3.3.256 - Bugfix
+CD:
+ - #269 Email alerts grid does not resize width on document load
+ - #270 Fix for missing ) in import functions.
+ - #209 Fix for using @host searches
+
+3.3.255 - Bugfix
+CD:
+ - #268 Time/Date display gets truncated on new JS-based MPx charts
+
+3.3.254 - Bugfix
+CD:
+ - #190 Better fix for backspace remap
+
+3.3.253 - Bugfix
+CD:
+ - Fix for #190 - backspace key remaps shell after install.
+
+3.3.252 - Bugfix
+CD:
+ - Test #254 - Losing sudoers on upgrade
+ - Test #211 - Fix for upgrade procedures from 3.2
+ - Test #267 - Added Upgrade Procedures for 3.2->3.3
+
+3.3.251 - Bugfix
+CD:
+ - Fix #266 - Session vars should be updated when admin menu changes are made.
+
+3.3.250 - Bugfix
+CD:
+ - Fixed #265 - Severities portlet width dropdown not set
+ - Added Elion filter for ESX Hosts
+ - Changed total message count back to using msg_sum instead of sphinx
+
+3.3.248 - Bugfix
+TH:
+ - #259: easy try to fix. We only need one record
+ 
+3.3.247 - Various
+CD:
+ - #246 Manually set chart orderby and order to count, desc - nothing else makes sense.
+ - #256 Removed Sort Order and Search Order, no longer needed.
+ - #258 Changed system.log name to audit.log
+ - #258 Added file creation and write chmod to audit.log so that audit trails will get written to disk
+ - #258 Modified audit logging to use PHP_EOL instead of \n so that file writes would contain a linefeed.
+ - #239 - Fix for drilling down on messages pie clicks
+
+3.3.246 - Security
+CD:
+ - #123 - pre-encrypt new user pass so that it does not get logged in audit trail or mysql log
+
+3.3.245 - Allow Favorites Edit Per User
+CD:
+ - #112 and #46 - Modified favorites admin to allow per-user editing of favorites.
+
+3.3.241 - New Admin Interface
+CD:
+ - Created a new admin interface.
+
+3.3.238 - RBAC
+CD:
+ - Fix incorrect bit setting when checking permissions
+
+3.3.233 - Multiple
+CD:
+ - Fix for dupop select not transforming to a multiselect box.
+ - Added backup of system files when replacing during uninstall.
+
+3.3.232 - RBAC
+CD:
+ - Fixed invalid key calculation for removing a user from a group
+
+3.3.231 - RBAC
+CD:
+ - #250 Removed option to add new group since they are now pre-created
+ - #250 Added option to rename groups
+ - #250 Removed option to delete a group
+
+3.3.229 - Cookies
+CD:
+ - #208 Fixed cookies
+
+3.3.228 - RBAC
+CD:
+ - #194 Change hosts to use grid regardless of count.
+
+3.3.227 - RBAC
+CD:
+ - #194 Fix for checking assignment on large hosts
+
+3.3.226 - Licensing
+CD:
+ - Check for web-based licensing. Fails when apache user has no directory write access.
+
+3.3.225 - Auto-install
+CD:
+ - Fix for autoinstall (skipped questions when not auto-installing)
+ - Modifed uninstall questioning order
+
+3.3.224 - Bugfix
+TH:
+ - bugfix on tail and search results (hope now works)
+ 
+ 3.3.223 - Bugfix
+TH:
+ - bugfix on tail and speedup msg graphs
+ 
+ 3.3.221 - Bugfix
+TH:
+ - improved sphinx search on graphs
+ 
+ 3.3.218 - Bugfix
+TH:
+ - hardcoded path in indexer.sh
+
+3.3.217 - RBAC
+TH:
+ - Pre-fill RBAC table with all possible rbac-groups
+
+3.3.216 - RBAC
+TH:
+ - RBAC Check access now showes the right groups
+ - groups in group commented out!
+
+3.3.215 - Full Automation
+CD:
+ - Made the installation fully automated via the .lzrc file
+
+3.3.211 - RBAC
+CD:
+ - #242 Work on "supergroup" containers (groups of groups)
+
+3.3.210 - RBAC
+CD:
+ - #229 Added menu item for checking user/host current access
+
+3.3.209 - Cookies
+CD:
+ - Working on cookies - still not working for multiselects.
+
+3.3.208 - Max Results
+CD:
+ - Set $spx_max = $limit in portlet_header.php (otherwise, $limit set on main page does not get honored)
+
+3.3.204 - UI
+CD:
+ - Added tooltips for portlet icons
+ - Changed "Remember" checkboxes to lock/unlock
+
+3.3.203 - UI and errorchecks
+CD:
+ - Fix calendar appearing behind modal boxes
+ - Fix array errors when results are empty
+
+3.3.202 - JQuery UI
+CD:
+ - Updated code to latest revs for UI, Datepicker and Themeswitcher
+
+3.3.201 - Charts
+CD:
+ - Cleanup/finalize all new chart code
+ - No more flash-based charts! wahoo!
+
+3.3.200 - Table width
+CD:
+ - Set table width properly
+
+3.3.197 - Cleanup
+CD:
+ - Cleanup code in table and charts files
+ - Added portlet_footer to merge save history for table and charts
+ - #244 - fix for save favorites
+
+3.3.196 - Various
+CD:
+ - Remove Flash detections (no longer using flash)
+ - Fix for chart generation errors
+ - Set defaul sort order to id desc
+
+3.3.188 - Licensing
+CD:
+ - Work on web-based licensing mechanism
+
+3.3.187 - bugfix
+TH:
+ - cleanup mysql procedure now in procedures.sql
+
+3.3.182 - adhoc Graphs
+TH:
+ - alwys use top-n records in charts
+
+
+3.3.181 - Search result views
+TH:
+ - cleanup() also cleans search results views once a day
+
+3.3.180 - RBAC
+CD:
+ - #51 Added menu for showing user access (will work on hosts tomorrow)
+
+3.3.179 - RBAC
+CD:
+ - #51 and #288 calculating rbac keys
+
+3.3.178 - Table Views
+CD:
+ - Generate semi-random view names for table results in order to prevent race conditions.
+
+3.3.177 - Various
+CD:
+ - Set default table sort to DBID
+ - Check user's browser width on startup and warn if < 1200px
+ - Find limit on pie clicks so that results table uses limit=pievalue
+
+3.3.169 - Charts
+TH:
+ - try to fix the pie charts
+
+3.3.168 - Right-click menu
+ - Working on results table
+
+CD:
+3.3.164 - Charts
+CD:
+ - New non-flash based charts!
+
+3.3.159 - Minor
+CD:
+ - Fix for limit not getting passed to charts
+
+3.3.158 - Minor
+CD:
+ - Fix for charts setting to 10
+ - Allow for 5000 results in search options
+
+3.3.157 - Minor
+CD:
+ - Change default theme to ui-lightness
+ - Fix for message log text on login page
+
+3.3.150 - New Tail
+CD:
+ - Implemented new tail function - including a pause button (yay)
+
+3.3.147 - Major
+CD:
+ - Major cleanup on code for portlet-table
+ - Replaced table with much better one
+ - Implemented time-based filtering as well as column-based filtering on results
+ - Results now paginate and scale MUCH better
+ - Still a work in progress, need to put some of the old functionality back
+ - Also plan to add a right-click context menu
+ - Also need to add tail refresh to this table (no more need for a separate page)
+
+3.3.145 - Minor
+CD:
+ - Better positioning of buttons on RBAC portlet
+
+3.3.144 - Multiple
+CD:
+ - Better select boxes on main page
+ - Re-added message box watermark (some customers did not understand they could search text)
+
+3.3.144 - Multiple
+CD:
+ - #51 fix for large hosts
+ - Replaced small corner messages with better messaging
+
+3.3.143 - RBAC
+CD:
+ - #51 - Final (hopefully) work on RBAC interface
+
+3.3.142 - RBAC (large hosts)
+CD:
+ - #51 - an even better interface
+3.3.141 - RBAC (large hosts)
+CD:
+ - #51 Second try at RBAC (to handle large # of hosts better)
+ - Host selector will change if # of hosts > 300
+
+3.3.138 - Fixes
+TH:
+ - Bugfix in db_insert.pl
+ 
+3.3.137 - RBAC
+CD:
+ - #51 Built Web UI for RBAC Controls
+
+3.3.135 - Enhancement
+CD:
+ - Added better/cleaner looking select boxes on main page
+
+3.3.134 - Bugfix
+CD:
+ - hide error_bar on document load until needed.
+
+3.3.133 - Bugfix
+CD:
+ - Removed extra } from install.pl
+
+3.3.132 - Error Checking
+CD:
+ - Added better error checking for Sphinx return results
+ - Changed default source for syslog-ng to "MYSOURCE" for pattern match during install
+
+3.3.131 - Bugfix
+CD:
+ - Appended hosts from RBAC caused incorrect total_found meta info
+
+3.3.130 - Bugfix
+TH:
+ - Fix on bug:216; use r_{time} for syslog-ng
+ - also fixed the replace of the right syslog source while install.pl
+ - bug:209; bring back "@host" and "@notes" into the code
+  
+3.3.129 - Optimize import trigger on logs
+TH:
+ - Mne and program is updated via import function. No more need on logs trigger.
+
+3.3.128 - New caching entry
+CD:
+ - #219 Added a cache entry for keeping track of last_insert_id.
+
+3.3.127 - Sphinx bug fixes
+CD:
+ - #198 Added X of X results display back in using query meta. Still needs work.
+
+3.3.126 - Counters
+CD:
+ - #195 Restored use of spx for retrieving totals.
+
+3.3.125 - Minor
+CD:
+ - Changed timeout warning for old version to Dec 15, 2012
+
+3.3.124 - Minor
+CD:
+ - Small modification to JS Function humanReadable to show 2 decimals (hundredths)
+
+3.3.122 - Multiple
+CD:
+ - Corrected invalid path for modules.js
+ - Added append of meta info to search() so that we can obtain total_found
+
+3.3.121 - mysql partitions
+TH:
+ - parametering dbname and tablename in logs_delete_part_proc
+ - bugfix bug #212 (wrong partitionname calculated in makepart() in db_insert.pl 
+ 
+3.3.120 - Licensing
+CD:
+ - Forgot to add new files.
+
+3.3.117 - Licensing
+CD:
+ - New interface for Web-based licensing.
+
+3.3.116 - archive
+TH:
+ - more work with archive ex-/import; now mainly done
+
+3.3.115 - archive
+TH:
+ - starting improvments of archive function (work in progress)
+
+3.3.113 - Minor
+CD:
+ - Fixed typo (left from testing) in install.pl - remove "/tmp" from rm_config block
+
+3.3.112 - updates
+TH:
+ - speedup for sphinx searches, precalculating the host candidates 
+ - try to fix the log_arch_* events start time
+   
+   3.3.112 - fixes
+TH:
+ - try to fix rbac problem with big ammount of hosts 
+   - hosts query will be split to 100 hosts partitions
+   - on "indexer fill" searchd will also restarted
+   - fix for long href in results page
+   
+   3.3.108 - fixes
+TH:
+ - try to fix 
+   - extra ")"
+   - messagecount
+   - sphinx distributed search
+
+3.3.107 - Licensing
+CD:
+ - Added auto-install for license during install.pl. Note you will need two new cpan modules:
+   Digest::Perl::MD5 and LWP::Simple
+
+3.3.106 - Minor
+CD:
+ - Update on license entry during install
+ - Modified old email and urls in multiple files
+
+3.3.105 - Sphinx
+TH:
+ - modified sphinx.conf for multicore searches
+
+3.3.104 - Licensing
+CD:
+ - Refining license (licadd.pl) to work better
+ - Changed default options to uninstall.pl answers
+
+3.3.103 - Major
+TH:
+ - Toms schema of distrubuted sphinx indexes
+ 
+3.3.102 - Minor
+TH:
+ - fix on system_log write to table (escapes chars)
+
+3.3.101 - Chart Test
+CD:
+ - work in progress: testing new charts
+
+3.3.99 - Minor
+TH:
+ - some changes for the program-portlet
+ 
+3.3.98 - Sphinx work
+CD:
+ - Added sphinx daemon startup during install.
+ - Added sphinx removal during uninstall.pl
+ - Made uninstall.pl a little better
+ - Added path reset to uninstall.pl
+
+3.3.97 - Sphinx work
+CD:
+ - Added new function for collecting simple sphinx query data (spx_query) - check common_funcs.php for info
+ - Modified ajax/counts to use new spx_query for meta info on number of messages
+
+3.3.96 - Major
+TH:
+ - Merge of branch/honzik with trunk.
+ - I keep fingers crossing that I found every line
+ 
+ 3.3.95 - Minor
+CD:
+ - Update install.pl to use the correct path statements.
+
+3.3.94 - Minor
+SPHINX:
+ - Fixed the wrong default name of the source for syslog_ng config
+
+3.3.93 - Minor
+CD:
+ - Fix line wrap in install.pl
+
+3.3.92 - Install/Uninstall
+CD:
+ - Minor update to fix syslog-ng.conf bug
+ - Also added to install.pl to remove old config block styles that were untagged with <lzconfig>
+
+3.3.91 - Sphinx
+SPHINX
+ - Fixed crontab
+ - Fixed sphinx conf - for zero max bound at cold first start
+ 
+3.3.90 - Sphinx
+SPHINX
+ - Fixed default values for sph_counter table
+ 
+3.3.89 - Sphinx
+SPHINX
+ - Oops... a typo in procedures.sql fixed
+ 
+3.3.88 - Sphinx
+SPHINX
+ - Fixed typo in sphinx.conf.
+ - Fixed indexer script - to always hold the delta index
+ - Fixed mysql hourly event - to update sph_logs
+ 
+3.3.83 Licensing and Sphinx
+CD:
+ - Modified licadd to be much more "user" friendly.
+ - Changed install.pl to create views for rotations instead of tables
+
+3.3.81 Minor
+CD:
+ - Added automatic IONCube installation and uninstallation.
+
+3.3.80 Sphinx Dev
+SPHINX
+ - Added delta index to the sphinx config/indexer
+ 
+3.3.75 - Minor
+CD:
+ - Added scripts/uninstall.pl and deleted scripts/cleardatabase.pl (uninstall does that also)
+
+3.3.66 - Sphinx
+CD:
+ - More work on new Sphinx
+ - Removed procedure builds from install.pl and created sql/procedures.sql for direct import instead
+
+3.3.65 - Sphinx
+CD:
+ - Changed indexer.sh to run correct indexer command so as not to cause missing idx_<blank> error
+ - Still missing sph_counter row id #3 from Sphinx dev team
+
+3.3.61 - Sphinx
+CD:
+ - Added archive table creation during install so that Sphinx sees all of them
+
+3.3.57 - Pathing
+CD:
+ - Again with the paths :-)
+
+3.3.55 - Various
+CD:
+ - Added better path updater to install.pl using find instead of grep (faster and doesn't hang when a pip exists)
+ - Worked on Sphinx code. Still not working yet :-(
+
+3.3.52 - Various
+SPHINX:
+ - Corrected sphinx run script to (re)start the daemon after indexing
+
+3.3.51 - bugfix
+SPHINX:
+ - Corrected sphinx config to surely cover all the elementary indices in the distributed
+ 
+3.3.37 - bugfix
+TH:
+ - Correcting Bug #145
+
+
+3.3.36 -Various
+CD:
+ - Uncommented $limit from table-refresh.php
+ - Changed Sphinx to use syslog for query and searchd logs 
+
+3.3.33 - Sphinx
+CD:
+ - Fixed order of call to $spx_max in portlet-table.php:search()
+
+3.3.32 - Sphinx
+SPHINX:
+- Search stuff switched to use mysqli instead of generic mysql api (all unifor)
+- still not returning result since spx_max passed to the search func outside is not integer (see the comment in the code, what to uncomment to see the whole sphinxql query)
+
+3.3.31 - Sphinx work
+CD: 
+ - Fixed apache errors being returned but sphinx still not returning results.
+
+3.3.30 - Sphinx work
+CD: 
+ - Modified search() call in portlet-table.php to alleviate new errors from the function.
+
+3.3.28 - Multiple
+CD: 
+ - Added "skip" options to .lzrc to allow sections of the installation process to be skipped 
+   (mainly used for testing/resinstalling multiple times)
+ To use the new lzrc option, create a file named scripts/.lzrc and add/modify the following properties:
+#------------------# 
+# basic properties # 
+#------------------# 
+$dbroot = "root"; 
+$dbrootpass = "mysql";
+$dbname = "syslog"; 
+$dbhost = "localhost";
+$dbport = "3306";  
+$dbadmin = "syslogadmin"; 
+$dbadminpw = "syslogadmin"; 
+$siteadmin = "admin";  
+$siteadminpw = "admin"; 
+$email = "cdukes\@logzilla.pro";
+$sitename = "LogZilla Server";
+$url = "/";
+$logpath = "/var/log/logzilla";
+$retention = "7"; 
+$snare = "N";
+#------------------# 
+# Skip section options
+# This may mess up the installation of you haven't already installed
+# The dev teams use this to avoid having to set up everything repeatedly during testing
+#------------------# 
+$skipdb = "N";
+$skipcron = "N";
+$skipsysng = "N"; 
+$skiplogrot = "N";
+$skipsudo = "N";
+$skipfb = "N";
+$skipsphinx = "N";
+$skiplic = "N";
+
+3.3.28 - Sphinx testing
+CD: 
+ - Changed $lzpath to $lzbase in install.php (lzbase is the correct var to use, lzpath is not valid)
+ - Modified call to initial indexer in install.pl to cd to the sphinx directory before running indexer.
+   This beta requires that sphinx commands be run from that dir (until we fix it).
+ - Changed S_DATE's to just DATE's in syslog-ng.conf. Too many users are complaining that they aren't receiving logs
+   This is a problem with their network devices not sending the correct timestamps, so we will use the server's TS instead.
+
+3.3.19
+SPHINX
+ - dynamic sphinx config
+ - excluded explicit 'path_to_logzilla' from config
+ - switched to mysql api (sphinxql) from sphinx api.
+
+3.3.18 - Bugfix
+TH: 
+ - another bug in gnu grep 2.5.1 (used by RHEL, CentOS)
+ 
+3.3.17 - Bugfix install.pl
+TH: 
+ - gnu grep 2.5.1 don´t know --exclude-dir=
+ - also exclude=*CHANGELOG*
+
+3.3.16 - Bugfix
+TH:
+ - Bug #168: tail honors mne and eid
+ 
+ 3.3.15 - Bugfix
+TH:
+ - Bug #141: tail should honor hosts filter; no more false negatives on tail
+ 
+ 
+3.3.14 - trivial
+TH:
+ - Bug #156: adding ":" in sphinx.conf
+
+3.3.13 - Minor
+TH:
+ - Correcting Bug #145
+
+3.3.12 - Minor
+TH:
+ - Correcting Bug #147 in all areas
+
+3.3.11 - Minor
+TH:
+ - explicit "# prefix_fields = msg, notes" in sphinx.conf
+ 
+3.3.10 - Minor
+TH:
+ - install.pl: /path_to_logs is no good default log path
+ - logrotate zipping all *.log from / is also no good idea
+ - put sphinx logs into path_to_logs
+ - exclude sphinx/src from path remapping; sphinx dir itself have to have this
+ 
+ 3.3.9 - Minor
+TH:
+ - install.pl didn´t detect mysql 5.5 or 5.6 versions
+
+TH:
+ - minor cosmetic change in import-portlet. Still a "hidden" feature
+ - Put feedback default to 0; install.pl will toggle it to 1 if user likes it (and not vice-versa)
+ - Fix for #163 (Sphinx support for 64bit-IDs on large db id's) - works also on IA32
+ 
+ 3.3.7 - Various
+CD:
+ - Minor update to the way paths are grepped for path updates (speed up searching)
+ - Fix for #163 (Sphinx support for 64bit on large db id's)
+
+3.3.6 - Sphinx
+CD:
+ - Added new Sphinx source code built for LogZilla from the Sphinx dev team
+ - Modified search function to use the dynamic indexes
+ - Modified sphinx indexer for new DB structure (hourly tables)
+
+3.3.5 - Various
+CD:
+ - (minor) renamed version major to 3.3 for beta branch
+ - #147 - Implemented table-refresh patch
+ - #148 - Implemented LDAP Patches for UofMO
+ - #150 - Added license prompt to the install process
+ - #151 - Implemented mysql procs for new table rotation schema
+
+
+3.3.311 - Bugfix
+TH:
+ - Fixed Sphinx query get host and port setting from "settings" again 
+
+3.2.310 - Minor
+CD:
+ - Fixed typo for "display"
+
+3.2.309 - Minor
+CD:
+ - Added missing files (not used yet)
+
+3.2.308 - Bugfix
+CD:
+ - Empty programs array value caused foreach() error after search results
+
+3.2.307 - Bugfix
+CD:
+ - Latest changes excluded post variables for programs, sevs and facilities.
+
+3.2.306 - Small Mod to menus
+CD:
+ - Remove "This Month" chart from top 10's if data retention is set to < 28 days
+
+
+3.2.305 - Bugfix
+CD:
+ - Forgot to add "today" keyword to top 10's for today's date.
+ - Missed filter setup for today's top 10
+
+3.2.304 - Updates
+CD:
+ - Change main page portlet fac and sev population to just use the sev and fac tables instead of querying the logs table (much faster).
+ - Test for Post in both table and adhoc
+
+3.2.303 - Updates
+CD:
+ - Cleanup in portlet-table
+ - Fixes for missing chart data in portlet-charts
+ - Modified quick links for Top charts - menus now contain links for time periods (day, week, month)
+ - Fixed grouping issues in Sphinx when generating certain chart types
+ - Modified license entry screen some to help users clear previously used sessions.
+ - Changed default tail from 25 to 10
+
+3.2.302 - Minor
+CD:
+ - Typo in search() function caused invalid parameter error for preg_match
+
+3.2.301 - Minor
+CD:
+ - Fix for small bug after testing on other systems
+
+3.2.300 - Multiple
+CD:
+ - rewrote deduplication tests in db_insert
+ - Fixed some minor bugs with cookies
+ - Fixed incorrect masks when drilling into hosts, etc. from the results page.
+ - Lot of cleanup of old code in portlet-table.php from prior to conversion of search() as a function
+ - Fixed minor bug in qstring post processing
+ - Added link and button effects so the user is aware of a click
+ - Added page refresh to 'Reset Cookies' button (otherwise cookies won't reset until next reload)
+ - Added ability to use @host or @notes in the search message text field.
+ - Removed watermark from dupcount
+ - Re-wrote help file for message text searching.
+
+3.1.299 - Minor
+ - Minor update to unknown programs
+
+3.1.298 - Bug
+ - Fix for #138 - Favorites admin not properly id'ing rows for deletion
+
+3.1.296 - Bug
+CD:
+ - Bug when using intval on CRC32
+
+3.1.295 - EID/Mne/Host Cookies
+CD:
+ - Updates on cookies
+
+3.1.294 - Mysql version
+CD:
+ - Modifed install.pl version check for mysql
+
+3.1.294 - Cosmetic
+CD:
+ - Updated the master CHANGELOG file with a summary of changes for this release.
+
+3.1.293 - Cisco Mnemonic Lookup
+CD:
+ - Added search icon to results to allow lookup of Cisco Error Messages on cisco.com (direct link requires login)
+
+3.1.290 - Cosmetic
+CD:
+ - Forgot to include the new help.sql file.
+
+3.1.289 - Cosmetic
+CD:
+ - Set check for SPX_MAX to only show limit > 1000 when SPX_MAX is > 1000
+ - Set default graph to be Top 10 hosts when the "Graph" button is clicked and no parameters have been set.
+ - Changed "Auto Refresh" to "Live Scroll (Tail)"
+ - Corrected "Search Options" portlet help section.
+ - Updated help file for Snare Events portlet.
+
+3.1.288 - Cron Update
+CD:
+ - Small addition to install.pl to ask for permission to restart CRON when updating /etc/cron.d/logzilla
+
+3.1.287 - Various
+CD:
+ - Updated 'feedback' button to say 'idea box' and use the LZ Blue color.
+ - Small fix for detecting Snare program names in db_insert (it was concatenating Cisco Syslog and the Snare Program).
+ - Major speed enhancements added for Sphinx queries.
+ - Replaced Adhoc chart MySQL queries with Sphinx (MUCH faster charting now).
+ - Added group sorting to Sphinx
+ - Added grouping by message to Charts (will provide top messages)
+ - Added error check for setting high result limits (more than 25) when Auto refresh is enabled.
+ - Updated Sphinx max_matches to 5000 (was limited to 1000)
+ - Updated limit in search options to 5000 (was 500).
+ - Added warning dialog when limit > 500 that the waiting will be on the client browser side and not the server.
+
+3.1.286 - Php-syslog-ng upgrades
+CD:
+ - Completed scripting for upgrade path from the old php-syslog-ng v2.x style databases.
+   Tested repeatedly on our end at this point as working, but results may vary.
+
+3.1.285 - Cisco, Programs as integers
+CD:
+ - Quick fix for Cisco syslog sending their program names as integers.
+
+3.1.284 - Install/Upgrade Support
+CD:
+ - Forgot to include trigger creation function for new installs (which would cause no hosts to show in the hosts portlet).
+
+3.1.283 - Upgrade Support
+CD:
+ - Added support for upgrading from v3.0.x
+
+3.1.282 - DB Updates
+CD:
+ - Fix on upgrade to check for existing columns.
+
+3.1.281 - Multiple
+CD:
+ - Moved some of the db_insert cache updates to MySQL triggers
+  DB Tables Altered: logs, cache
+  DB Procedures: Dropped updateHosts, updateEid, updateMne
+ - Added db_insert catch for OSSEC messages - they send the originating host in the message.
+ - Modified install.pl to handle upgrading much better
+ - Fixed bug for "Sphinx Error: index idx_delta_logs,idx_logs: sort-by attribute 'id' not found"
+ - Fixed bug in Email Alerts grid that was not deleting the correct row when user clicked delete.
+ - Fixed lacking GET processing of json object pass to Sphinx.
+ - Working on adding upgrade paths for all version of LZ via the install.pl
+
+3.1.280 - Smallint
+CD:
+ - Updated smallint to int for 'seen' columns (smallint limits to 65k)
+
+3.1.279 - Sphinx Search
+CD:
+ - #131 - Fix for using @field for program and mnemonics instead of SetFilter (error was "no such filter attribute")
+
+3.1.275 - Cache Updates
+CD:
+ - #122: (slow cache updates) - should be fixed now. logs table was missing an index on hosts.
+
+3.1.274 - Cache Updates
+CD:
+ - #122: Separated table cache updates to help speed up nightly routines on large systems
+
+3.1.273 - Cookies
+CD:
+ - #47: Cookie Reset button resets search options to page defaults rather than blank.
+ - #47: Removed watermark from message text area so that text could be cookied - moved message counts to portlet header.
+
+3.1.272 - Various
+CD:
+ - Added cache update to 3.1.122 upgrade in install.pl
+ -  #129 Replaced portlet-table.php sphinx calls with new search() function
+ - Added better error handling for Sphinx errors
+
+3.1.271 - Cookies
+CD:
+ - #47: Grid selections mirror portlet. 
+   Cookies for every main page option.
+   Remember icon added to portlets to enable/disable remembering individual portlet settings.
+   Reset Cookies button now resets both cookies and form
+
+3.1.270 - Search Function
+CD:
+ - #129 More work on the new search() function. Tested and working now (not implemented outside the function yet).
+
+3.1.269 - Multiple
+CD:
+ - #128 Removed increment setting from triggers.sql install file and set the test trigger id to 1 (was 2).
+ - #128 Fixed setPrimaryKeyId in email alerts grid - position in file required it to be above setColModel call.
+ - Small modification to indexer.sh to print both start and end times after the run completes.
+ - Replaced code in portlets/portlet-table for filter_lo_start/end, etc. with the strototime function.
+ - #129 Added new function to common_funcs for better use of sphinx queries (function search()) - not implemented yet
+
+3.1.268 - Snare Bug
+CD:
+ - Typo in db_insert was not inserting the correct snare_eid to the logs table.
+
+3.1.267 - Sphinx bug
+CD:
+ - Fix for #126: Unexpected $end when searching for "I/O"
+
+3.1.266 - Install Script
+CD:
+ - Added restart of AppArmor daemon when adding to security profile
+
+3.1.265 - Cosmetic
+CD:
+ - Don't show sphinx result count during tail
+
+3.1.264 - Bug
+CD:
+ - Better fix for #121
+
+3.1.263 - Bug
+CD:
+ - Fix for #121: Tail operation stalls on large DB's when returning to homepage
+
+3.1.262 - Installation
+CD:
+ - Added Sphinx extract, compile, index and daemon start to install.pl
+  Will prompt during install for setup, or use './install.pl install_sphinx' as a shortcut.
+
+3.1.261 - Bug
+CD:
+ - urlencode for VMWare server was interfering with Cisco Mnemonic for %C(4K)
+
+3.1.260 - Minor
+CD:
+ - Cosmetic changes to help clarify search results when no matches are found.
+
+3.1.259 - Minor
+CD:
+ - Changed default from 10 results to 100 on main search options
+
+3.1.258 - VM/banner
+CD:
+ - Better banner script. When udev rules are deleted for VM, must wait for new IP.
+
+3.1.257 - Regression
+CD:
+ - Fixed typo in licadd
+
+3.1.256 - Regression
+CD:
+ - Had to set path manually in licadd.pl because getcwd won't work from web interface.
+
+3.1.255 - VM
+CD:
+ - Added scripts/VM/banner.pl which is used to set tty and ssh banners for Virtual Machine deployments
+
+3.1.254 - Paths
+CD:
+ - Set pathing in some Perl scripts using getcwd rather than regex replace during install
+
+3.1.253 - MySQL
+CD:
+ - Forgot to remove LOCAL keyword from the MySQL LOAD DATA command after testing remote DB inserts.
+
+3.1.252 - Minor
+CD:
+ - Added scripts/cleardatabase.pl which allows resetting the admin password and clearing all data to start fresh.
+
+3.1.251 - Minor
+CD:
+ - Found typo for crc2prg in Adhoc charts
+
+3.1.250 - Multi
+CD:
+ - More work on cookies
+ - Fix for remote database inserts in db_insert.pl (dsn needs use_local_infile keyword).
+
+3.1.249 - Minor
+CD:
+ - Typo in dbupdates.pl script
+
+3.1.248 - Minor
+CD:
+ - Change 'seen' column from smallint to int unsigned in hosts, mnes and eids
+ - Added scripts/dbupdate.pl script to modify seen columns and add seen updates to cacheUpdate mysql proc.
+
+3.1.247 - BugFix
+CD:
+ - Fix for top menu charts not showing 'none' mnemonics when mne charts aren't being asked for (as in top 10 programs).
+
+3.1.246 - Enhancement
+CD:
+ - Updated install.pl to add updates for the seen hosts, mnes and snare_eids when calling the updateCache procedure in MySQL.
+
+3.1.245 - BugFix
+CD:
+ - #117 - Unable to detect missing partitions when using remote MySQL server.
+
+3.1.244 - BugFix
+CD:
+ - db_insert bug: when snare enabled, but no snare events, snare_eid value is blank causing imports to fail.
+   resolved by setting snare_eid = 0 when field is blank.
+
+3.1.243 - Minor
+CD:
+ - Fixed typo on about page
+
+3.1.242 - About Page
+CD:
+ - Added Email Alerts status to about page
+
+3.1.241 - Regress
+CD:
+ - Removed foreach statement from login.
+
+3.1.240 - Update
+CD:
+ - Set login Tips to only show at login, not when navigating back during normal use.
+ - Renamed Sunny theme to LogZilla and placed it first in the themeswitcher.
+ - Clear session variables when url = login.php
+ - Fixed bug: missing session_start() in ajax/json.sadmin that was not updating session variables until logout/login
+ - Moved db_insert.pl cache dumps to end of loop rather than dumping every minute so that hosts, etc. don't show up in last seen as all at the same time.
+ - Moved highslide call to whatsnew page - there's a path error somewhere causing the license helper to report a missing file.
+
+3.1.239 - Update
+CD:
+ - Better catch-all scrub for program names in db_insert.pl (previous regex made too many things come in as "unknown")
+
+3.1.238 - Minor
+CD:
+ - Changed portlet title for "Mnemonics" to "Cisco Mnemonics"
+
+3.1.237 - Upgrade
+CD:
+ - #106 More work on the upgrade process
+
+3.1.236 - Minor
+CD:
+ - Updated db_insert.pl to rename junk program names (like xml data, etc) to just "Unknown"
+
+3.1.235 - MySQL Remote DB
+CD:
+ - Added regex to replace 'LOAD DATA INFILE' with 'LOAD DATA LOCAL INFILE' when using remote database.
+
+3.1.234 - MySQL Remote DB
+CD:
+ - Added logic into install.pl for remote DB support.
+
+3.1.233 - Upgrades
+CD:
+ - #106 - Working on an upgrade path for php-syslog-ng v2.x
+
+3.1.232 - Multiple
+CD:
+ - Reset snare_eid in db_insert from previous loop so that new non-snare events aren't assigned the last eid.
+ - #106 - Created upgrade option in install.pl
+
+3.1.231 - Regression
+TH:
+ - #10 more cleanup in install.pl - think now it's all
+ 
+3.1.230 - Bugfix
+CD:
+ - Found new bug in grids: When jQuery Modal set 'true', advanced search boxes do not work
+ - Fix missing height/width settings in favorites editor
+ - Added YouTube Video's for the "What's New" Menu item.
+
+3.1.229 - Regression
+CD:
+ - #10 Added archive table back in
+
+3.1.228 - Regression
+CD:
+ - #10 install.pl: commented out new export, uncommented partitioning.
+
+3.1.227 - bugfix
+CD:
+ - #113 Grid autosize for email alerts grid
+
+3.1.226 - bugfix
+CD:
+ - #59 Commented out 3.3 changes
+
+3.1.225 - bugfix
+TH:
+ - prevent double insert of archive
+
+3.1.224 - Enhancements
+TH:
+ - archive import (what else)
+ 
+3.1.223 - Enhancements
+TH:
+ - 1st "beta" of archive import
+ 
+3.1.222 - Typo
+TH:
+ - Typo in ui_layout.sql
+
+3.1.221 - Enhancements
+TH:
+ - more work on archive import
+
+3.1.220 - Enhancements
+TH:
+ - more work on archive import
+
+3.1.219 - Fixes
+CD:
+ - js_footer:1002 Added check for undefined hosts, mnes and eids so that Sphinx would not throw an assertion error if the portlets are disabled
+ - Added WHERE clause for mne=None to the $_GET for Top 10 Mnemonics
+ - Fixed bug causing mysql error on portlet access updates.
+ - Fixed bug in ui_layout that was showing the EID even when the install choice=no during install
+ - #47 cookienames were colliding with portlet names.
+
+3.1.218 - Enhancements
+CD:
+ - Added a date timeout for the "What's New" page - also, when it times out (Sept), it will give a notification that this version is old and they should upgrade.
+
+3.1.217 - Enhancements
+CD:
+ - Changed + icon in hosts, mne, eid to a search icon.
+ - Added a "where eid>0" for Snare EID's (no point in listing non-snare events in the portlet)
+
+3.1.216 - Minor
+TH:
+ - #9   fixed "bound together" in tail
+ - #9   fixed the '"' bug in tail
+ - fixed bug when clicking eid in the result page not filtering
+
+3.1.215 - Minor
+TH:
+ - #59  comment out the right column in suppression (msg and notes)
+ - #59  adapt the views (delete msg and notes stuff)
+ - #107 Changed column definition for EID's in sphinx.conf
+ - #9   fixed "bound together"
+ - #9   fixed the '"' bug
+
+3.1.214 - Minor
+CD:
+ - #107 Forgot to add portlet-snare_eid to svn :-)
+ - #107 Changed column definition for EID's to smallint unsigned (0-65535)
+ - #47  More work on cookies
+
+3.1.213 - Minor
+CD:
+ - Fixed #110 invalid dbh handle for feedback button.
+
+3.1.212 - Update
+CD:
+ - Added install.pl attempt to modify Apparmor profile when detected.
+ - Added feedback button (can be disabled via admin>settings>feedback.
+ - Fixed #109 - Cookies overriding post variables.
+
+3.1.211 - Update
+CD:
+ - Updated enum(eid) column for event suppression table.
+
+3.1.210 - Enhancement
+CD:
+ - More work on #47 - Cookies (added clearCookies() for reset button)
+
+3.1.209 - Bugfix
+TH:
+ - Use EID as number not as text
+
+3.1.208 - Enhancement
+CD:
+ - #47 - Work in progress: Remember main page selections
+
+3.1.207 - Enhancement
+CD:
+ - Added small search icon to Snare/Windows EID's to allow evenid.net lookups on events.
+
+3.1.206 - Fix
+CD:
+ - Fixed #102 (again!) - Horizontal scroll bar should not appear on mne and hosts selector.
+
+3.1.205 - Fix/Enhancements
+CD:
+ - #107 - Added Snare to LogZilla (db_insert, eventid tracking, charts, table display, etc.) Enable under Admin>Settings>Snare
+ - Fixed #7 - erroneous /> in tail refresh
+
+3.1.204 - Bugfix
+CD:
+ - Fixed #102 - Horizontal scroll bar should not appear on mne and hosts selector.
+
+3.1.203 - Archive Import
+TH:
+ - Changes in the export procedure and archives table
+ 
+3.1.202 - Documentation
+CD:
+ - Fixed #96 - Updated documentation on help portlets for Hosts and Mnemonics
+
+3.1.201 - Fixes/Enhancements
+CD:
+ - #33 Added @hosts capability to msg_mask
+ - Fixed #103 - Duplicate count on mne/hosts header when moving portlet
+
+3.1.200 - enchantment
+TH:
+ - Started import portlet
+ 
+3.1.199 - Various
+TH:
+ - Modified messaging for suppression changes (more readable)
+ 
+3.1.198 - Various
+CD:
+ - Fix for #103 - Last 10 Hosts/Mne should be last N variable from settings
+ - Modified messaging for suppression changes (more readable)
+
+3.1.197 - Various
+CD:
+ - Another fix for issue #99 ('None' being calculated with Mnemonics)
+
+3.1.196 - Various
+CD:
+ - Added more to the what's new page - still need to add video links.
+ - Fix for #104 - Selected Hosts and Mnes not filtered in tail refresh
+ - Started on #47 - Remember main page selections
+
+3.1.195 - minor
+TH:
+ - a more specific error message on zero searches
+ 
+3.1.194 - Bugfix
+TH:
+ - back to "old-style" views without REGEXP
+ 
+3.1.193 - Various
+CD:
+ - Modified g_redirect to take in the url passed instead of re-writing based on http(s)
+ - Added a "What's New" menu item - still have much work to do on it.
+
+3.1.192 - Various
+CD:
+ - Fix for #101 - reset_layout
+ - Fix for #62 - Add note about requiretty for non-ubuntu OS's
+ - Fix for #7 - Extraneous /> in message column
+ - Fix for #103 - Allow set portlet limit of mne in admin>settings.
+ - Fix for #8 - Remove FO/LO AND/OR
+
+3.1.191 - UI
+CD:
+ - Added row highlight when mne and hosts items are checked.
+
+3.1.189 - Various
+CD:
+ - Various UI improvements
+ - Applied better fix for issue #99 ('None' being calculated with Mnemonics)
+ - Added sql file for mne table
+
+3.1.188 - Bugs
+CD:
+ - Fixed Mnemonics selector column width bug
+
+3.1.187 - Bugs
+CD:
+ - Multiple host selected were not getting counted in the new grid format when main selections were made
+ - Fixed same bug with mnemonics
+
+3.1.186 - Mnemonics Portlet
+CD:
+ - Modified Mnemonics portlet to act the same as the hosts grid.
+ - In organizations with a large amount of devices, this portlet will need to scale.
+
+3.1.185 - Sphinx results in portlet-table
+CD:
+ - #44 Added error checking to see if Sphinx indexes are running.
+ - #44 Disabled switch to tail mode when no Sphinx results were found.
+
+3.1.184 - Menus
+CD:
+ - Fixed misaligned submenus
+ - Added fade to clicked menu items (user request to know they clicked)
+
+3.1.183 - Work on sudoers
+CD:
+ - #94 Added check for tty during sudoers install on non-ubuntu OS's
+
+3.1.182 - Bugfix
+CD:
+ - #99 - Fixed bug in chart generation for non-cisco mnemonics that included mne='none'
+
+3.1.181 - Bugfix
+TH:
+ - updateCache() fills in wrong date
+
+3.1.180 - Bugfix
+TH:
+ - in cron.d/logzilla the 6th parameter must be the user who run the job
+ - minor path bug in the crontab file
+ 
+3.1.179 - Minor
+CD:
+ - Modified install for path updates and cron.d
+
+3.1.177 - Sphinx
+CD:
+ - Modified paths in new LSB script.
+
+3.1.176 - Sphinx
+AW:
+ - Added LSB compliant script for startup of searchd
+
+3.1.176 - bugfix
+TH:
+ - found bug in the 2 views
+ 
+3.1.175 - MSG filters for suppression
+CD:
+ - Finished code for msg filters.
+
+3.1.174 - install enhancement
+TH:
+ - added to copy of the crontab to /etc/cron.d from install.pl
+ - as lazy guy I also added a sphinx_install.sh
+
+3.1.173 - snippet
+TH:
+ - just uploaded portlet-import.php cause at svn its saver than on my crashed HDD
+
+3.1.171 - Bugfix
+CD:
+ - Fix for #83
+ - Added missing javascript plugin (fluidgrid)
+
+3.1.171 - MPD Average
+CD:
+ - #83 Made calculations an average instead of a hard set limit.
+ - #59 Initial work on regex suppression
+
+3.1.170 - Various
+CD:
+ - Fixed regex for usernames to allow a number in the name.
+ - Fixed "Infinity" error in sparklines
+ - Found bug in noauth user and fixed
+ - Added a "Favorites" editor for admins (appears on the favorites menu).
+
+3.1.169 - Notes update
+CD:
+ - #33 Notes now searchable using @notes
+
+3.1.168 - Work on license add and email alerts
+CD:
+ - Added script to apply licenses either from web interface or command line.
+
+3.1.167 - More investigation on SNMP
+CD:
+ - #31 Small changes to traps.sh so that it didn't truncate.
+
+3.1.166 - Various
+CD:
+ - #97 Small addition to the chart generation page to indicate sort order - default is LO, not count.
+ - #14 Added menu items for 20 chart types to the main menu bar.
+
+3.1.165 - SNMP
+CD:
+ - Initial look at snmp, noticed thatatraps.sh needed the new TS format included.
+ - Also note that traps.sh was not set to executable
+
+3.1.164 - Email Alerts and Syslog
+CD:
+ - Added SUDO (/etc/sudoers) setup to install.pl
+ - Added Timestamps based on syslog message itself instead of server time.
+
+3.1.163 - Email Alerts and Syslog HUP
+CD:
+ - Added code to use sudoers for signal HUP
+
+3.1.163 - License Helper
+CD:
+ - wrote some new stuff to help people with licensing
+
+3.1.162 - Email Alerts
+CD:
+ - Finished up with Email Trigger interface
+ - Added a small "disk" icon that must be clicked when editing/adding patterns. This will ask you if you want to restart
+   syslog-ng. And it will send a HUP signal if you click yes.
+ - Added help to the Email Alert portlet's context-sensitive help area.
+
+3.1.161 - Backend updates
+CD:
+ - Aligned the front page hosts table a bit better
+ - Added a subject line to the email alerts which includes the host that generated the trigger.
+
+3.1.160 - Backend updates
+CD:
+ - Forgot to remove the border from the hosts grid (for testing only)
+
+3.1.159 - Backend updates
+CD:
+ - Changed the home page gradient and menu colors
+ - set default ui_layout for template user and admin for better initial layout
+ - Added multiselect to main page top 10 hosts.
+
+3.1.158 - Backend updates
+CD:
+ - Left a setting out from last update
+
+3.1.157 - Backend updates
+CD:
+ - added a touch to the install for $logdir/logzilla.log so that errors don't occur when using the common function 'logmsg'
+ - Cleanup up some backend future code for the LZECS project
+
+3.1.156 - Little bug in the export procedure
+TH:
+ - export file not calculated right in 1st of every month
+
+3.1.155 - more work in traps
+TH:
+ - a trap now sends a email (via Email Alerts)
+ 
+3.1.154 - fixed excel typo bug #56
+TH:
+ - nothing to say
+
+3.1.153 - 1st view on trap handling
+TH:
+ - easy made trap import
+
+3.1.152 - patch for bug #44
+TH:
+ - if a search fail cause there is a (un-)suppressed filter it try to tail for the records
+ - it should also work if there are records in the database, but sphinx search did not catch them yet
+
+3.1.151 - Missing files
+CD:
+ - letterhead
+ - Eula
+ - fixed term pager
+
+3.1.150 - Cosmetic
+CD:
+ - Added PDF export to grids
+
+3.1.149 - Various
+CD:
+ - Added EULA to appease the lawyer guys...
+ - Fixed most grid bugs - only one left (yay)
+ - Renamed "Triggers" to "Email Alerts" 
+
+3.1.148 - Grids
+CD:
+ - More work on the hosts grid and event triggers grid
+
+3.1.147 - install.pl blocker
+TH:
+ - fixed the export procedure
+ - speedup the import.sh
+
+3.1.146 - Grids
+CD:
+ - Worked on the Hosts grid - fixed duplicate icon bug
+
+3.1.145 - archive changes
+CD:
+ - Cleanup up import and export shell files a bit.
+   Changed from using /tmp to the exports/ directory because of Apparmor blocking
+   Changed to gzip instead of bunzip (wider range of OS support)
+
+3.1.144 - archive changes
+TH:
+ - exports path now in the table settings (archive_path)
+ - write the exported days also into a table (archives) so we can further use it in the web-frontend 
+
+3.1.143 - db_insert.pl changes
+TH:
+ - retry to insert the cached data after a partition create. Otherwise that info get lost 
+
+3.1.142 - archive changes
+TH:
+ - Fixed more parameter in the export.sh and import.sh script
+ - split the dumpfile for import in 100000 lines parts - so the lock on the logs table isn't too long 
+
+3.1.141 - Updates/various changes
+CD:
+ - Moved favicon from images/ to the root so apache would stop complaining.
+ - Changed g_redirect call from $_SERVER['HTTP_HOST'] to $_SERVER['SERVER_NAME'] as it causes proxied web redirects to break.
+ - Fixed username/password in export.sh script
+ - Added note about Apparmor blocking MySQL read/writes 
+   (see http://nms.gdd.net/index.php/Install_Guide_for_LogZilla_v3.x#Apparmor_Blocking)
+ - More work on the Triggers grid (can now perform CRUD operations)
+
+3.1.140 - Updates/various changes
+CD:
+ - Adding/changing a few things for cosmetic and scaling reasons
+ - Added 'SPARKLINES' setting in admin>settings to disable the main page sparklines (on large systems, users may opt to disable it to avoid constant data refreshes).
+ - Modified html_header for better (hopefully) meta tags and refresh settings.
+
+3.1.136 - Updates/New Host Portlet feature
+CD:
+ - Added 'seen' and 'lastseen' columns to the hosts table (also updated db_insert.pl to inject the datetime)
+ - Made home page "Hosts" portlet show only the last X hosts (change X using admin>settings>PORTLET_HOSTS_LIMIT
+   - Users can now click on the small '+' in the hosts portlet to get a much more scalable host selector with search, export, etc.
+ - Removed warning about Internet Explorer when version is = 8 or better (LZ works ok with that version...YAY!).
+
+3.1.135 - Minor enhancement
+CD:
+ - Added check for syslog-ng PID to the install.pl
+   - if PID exists, ask to send a HUP to syslog-ng (so that the new config gets loaded).
+
+3.1.134 - Alerts Enhancement
+CD:
+ - #62: forgot to add navmenu to web interface for "Event Triggers"
+ - #62: Added stripslashes to pattern recall in db_insert.pl (since it gets inserted from the web interface with mysql_real_escape)
+
+3.1.135 - Bugfixes etc.
+TH:
+ - commented out the old archive stuff
+ - changed database location to localhost - we use socket then
+ - some parametering of the "hardcoded" /path_to_logzilla
+ 
+3.1.134 - Alerts Enhancement
+CD:
+ - #62: Triggers ready for testing
+
+3.1.133 - Alerts Enhancement
+CD:
+ - #62: Initial build of Admin Interface for triggers (not completed yet)
+
+3.1.132 - Bugfix: imported Data not in the sphinx dataspace
+TH:
+ - have to indexer.sh full after import
+
+3.1.131 - Enhancement: views uses REGEXP for msg
+TH:
+ - #59: ready for further work
+ 
+3.1.130 - Enhancement: Shell Script for importing archives
+TH:
+ - found in scripts/contrib/import_shell
+ 
+3.1.129 - Enhancement: db_insert.pl looks into my.cnf
+CD:
+ - #75: Testing scripts/sql/lzmy.cnf
+
+3.1.128 - Enhancement: db_insert.pl looks into my.cnf
+CD:
+ - #75: Added lzmy.cnf file creation to the install.pl
+ - Changed the mysql read from db_insert.pl to point to $lzbase/scripts/lzmy.cnf
+
+3.1.127 - Enhancement: db_insert.pl looks into my.cnf
+TH:
+ - logzilla looks into a [logzilla] section in my.cnf for db_insert.pl
+
+3.1.126 - Bugfix: bugs in install.pl and db_insert.pl
+TH:
+ - was too fast for the 125
+ - also fixed the db_insert.pl bug (removed the extra "exit;") 
+
+3.1.125 - Enhancement: Prototype of archive tool
+TH:
+ - first archive Prototype; it export automatically and bz2 it
+ - the import (still) a simple shell script, there a lot of work to do
+ - all functions/procedures/scripts needs parametering
+
+3.1.124 - FIX: Sphinx search "or" and "not"
+TH:
+ - the "|" and "!" was escaped in the msg-text; now they are right
+
+3.1.123 - Event Triggering
+CD:
+ - Initial work on #62 (Event Triggers)
+ - (minor) Modified default settings in settings.sql for some unused LDAP options (defaulted them to hidden)
+
+
+3.1.122 - DB User
+CD:
+ - #16: added test for existing syslogadmin
+
+3.1.120 - Bugfix
+CD:
+ - #16: Another attempt to auto-create partition bug when debug not enabled
+
+CD:
+ - #16: Another fix for auto-create partition bug when debug not enabled
+        Bug only occurs during normal operation, worked during testing because we were using the console to generate.
+
+3.1.118 - Bugfix
+CD:
+ - #16: Fix for auto-create partition bug when debug not enabled
+
+3.1.117 - Minor
+CD:
+ - #43: Changed revision to 3.1
+ - Added minor tweaks to the install Q&A
+
+3.0.116 - Fix
+CD:
+ - #16 Fix for dbadmin grant during install
+
+3.0.115 - updates/prep for 3.1 release
+CD:
+ - Moved CHANGELOG to CHANGELOG.detailed and created a summary of changes only to the new CHANGELOG
+
+3.0.114 - updates/prep for 3.1 release
+CD:
+ - Removed upgrades/ directory 
+   - upgrades can be done using http://nms.gdd.net/index.php/Upgrade_Procedures_for_Logzilla_3.0#New.2FEasier_upgrade_procedures
+ - Fix for #41 - Wrap long text in the results table so it diesn't scroll off the page.
+
+3.0.113 - fixes
+TH:
+ - order now works for offered fields
+
+3.0.112 - updates/fix
+CD:
+ - Set program to "Cisco Syslog" when Mnemonic is detected
+ - Set correct sort order on hosts table (was set to ASC)
+ - fix for dedup bug [[ticket:35]]
+
+3.0.111 - fixes
+TH:
+ - date_andor set default AND when not set 
+ - suppression uses view in ad-hoc charts
+
+3.0.110 - Bug
+CD:
+ - Counter was off when deduplicating
+
+3.0.109 - fixes
+TH:
+ - another sphinx search fix (searches with '@')
+
+3.0.108 - fixes
+CD:
+ - load infile permission fix
+
+3.0.107 - enhancements/fixes
+CD:
+ - Added MySQL event to verify cache counters nightly (at 1:00am by default).
+ - Fix for permission issue on new auto-create partition function
+
+3.0.106 - bugfix
+CD:
+ - Add input type=hidden for FO in datepicker when deduplication is off
+ - Make SPX_ADV off by default in settings.sql
+ - Change description of settings>retention from dropped to moved into archive.
+ - Fix for SPX_ADV options showing up when SPX_ADV=1 but SPX_ENABLE=0 (removed radio buttons for that condition).
+
+3.0.105 - bugfix
+TH:
+ - don't look at lo while tail (trivial)
+
+3.0.104 - enhancement
+TH:
+ - enable show retention variable in the settings table
+
+3.0.103 - bugfix
+TH:
+ - corrected mne and program filter in sph search string
+
+3.0.102 - enhancement
+CD:
+ - Added a new setting for using advanced search capabilities. The default is now boolean only. To utilize the more advabced features, simply change the admin>settings option for "SPX_ADV" to 1 (enabled).
+ - DB Changes:
+   - settings table changed
+   - help table changed
+
+3.0.101 - minor
+CD:
+ - Removed "First Occurrence" references when deduplication is not enabled.
+
+3.0.100 - bugfix
+CD:
+ - Small fix for introduced partition bug
+
+3.0.99 - update
+TH:
+ - try to fix the datepicker bug
+
+3.0.98 - update
+CD:
+ - Removed the MySQL event to create a new partition every day since db_insert.pl now does it automatically.
+ - Archive retention days is now set through the admin interface (admin>settings>retention).
+
+3.0.97 - update
+CD:
+ - Added code to auto-repair missing partitions from mysql.
+
+3.0.96 - updates
+TH:
+ - Fixed the Timerange Problem on fo and lo while searching with sphinx
+
+3.0.95 - updates
+TH:
+ - Fixed the "showing xx of yyy entries", yyy now correct calculated
+
+3.0.93 - updates
+TH:
+ - lz now uses sphinx search: msg, host, program, severity, facility, mnemonic, fo, lo, counter.
+ - "show suppressed" is implemented in database views
+ - sphinx is used in saved searches
+ - lo works whithin "today"
+ - if tail is used, sphinx is disabled cause they a only updated every 5 minutes
+CD:
+ - DB: Fixed typo in help for "FO - Last Occurrence" (should be "LO")
+ - Changed re_pipe in db_insert.pl to account for program names with trailing spaces (like kernel in CentOS)
+
+3.0.92 - updates
+ - Added filter to not include "None" Mnemonics in Cisco Mnemonic Charts.
+ - Added flush of host, prog and mne upon exit from db_insert (so smaller servers won't lose cache)
+ - Removed the word "Options" from the menu - it doesn't fit well on linux desktop Firefox
+ - Added a link to www.logzilla.pro in the navmenu
+
+3.0.91 - minor
+ - Added check for missing license to index.php
+
+3.0.90 - minor
+ - Work on upgrade script
+
+3.0.89 - updates
+ - Added an upgrade script
+ - Removed license.txt, you can now obtain one from http://www.logzilla.pro
+
+3.0.88 - minor
+ - Changed a few text files (readme, etc.)
+
+3.0.87 - updates
+ - Replaced re_mne regex in db_insert.pl to better capture Cisco Mnemonics.
+ - Added a catch-all for incoming junk program strings in db_insert.pl (note - Kanji users may have to comment this out)
+ - Modified portlets/portlet-search_options and added error catching for negative $dedup_pct calcs (if there's not enough data).
+
+3.0.86 - updates
+ - Commented out mysql_pconnect so that LZ will default to mysql_connect
+    My test server was keeping connections open and eventually caused a crash.
+    pconnect has been the default for so long, I can't remember why it was chosen.
+    There doesn't seem to be any logical reason to use it, but if you need it, you
+    can uncomment it from common_funcs.php.
+ - Modified min username and password length in config/config.php regex from 4 to 1.
+    Ref: http://forum.logzilla.pro/index.php/topic,228.0.html
+ - Added $baseurl variable to scripts/contrib/genreport/genreport.pl
+ - Removed old css include for Facebox plugin
+ - Added "session_start()" to json.sparkline.php so that it wouldn't query the DB every second for settings
+ - Modified the MPD chart cache calculation to divide by 2 for today's entries (it was doubling the totals).
+ - Added Regex for 3Com Firewalls in db_insert.pl
+
+3.0.85 - updates
+ - Updated license.txt
+ - Updated license errors (blank page was showing instead of error when license expired).
+ - Modified portlets/portlet-search_options and added a round to $dedup_pct.
+ - Modified sphinx.conf charset to ignore '=' as a delimiter.
+    See http://forum.logzilla.pro/index.php/topic,208.0.html for more information
+ - Fixed invalid MNE capture for Juniper devices
+
+3.0.84 - updates
+ - Converted functions.security.php from dos to unix format.
+ - Enabled error_reporting(E_ALL & ~E_NOTICE) in common_funcs.php to catch errors.
+
+3.0.83 - updates
+ - Fixed typo in mail_daily_report.pl
+
+3.0.82 - updates
+ - Modified mail_daily_report.pl to fix msg count for today's date.
+
+3.0.81 - updates
+ - Fixed session errors
+
+3.0.80 - updates
+ - Fixed ArrayClean error
+
+3.0.79 - updates
+ - Added regex for PIX firewalls to db_insert
+ - Added regex to remove HEX 7f Characters in NT Event Logs
+
+3.0.78 - updates
+ - Added test to make sure the json_encode() function was available. Some Gentoo systems don't have it enabled.
+
+3.0.77 - updates
+ - Finished working out the auto-partitioning and archive table routines
+    SPECIAL NOTE: on larger systems, you may need to adjust the timing of each called procedure.
+    This can be changed in install.pl in the "# Create Partition events" section. 
+    For now, they are staggered at midnight, 12:10 and 12:15
+
+3.0.76 - updates
+ - Modified contribs/logreplay to allow a limit on number of hosts that will be generated, 
+    default is 50 so you don't overrun the demo license during testing.
+ - Modified contribs/genreport to allow the types of reports to generate (total messages, average per hour, etc.).
+ - Updated Demo License to allow for 500kmpd, 50 hosts, Adhoc Charts and LDAP auth. Expires July 9th, 2010.
+ - Added quotes to dbrootpass in install.pl to help with passwords (see http://forum.logzilla.pro/index.php/topic,179.0.html)
+ - DB: Modified the way events and partitions get automatically created/dropped.
+ - DB: Added an ARCHIVE table to move old events to before dropping them.
+ - DB: Added an index to the FO and LO columns
+ - Fixed bug in db_insert.pl that was not importing any remaining messages at the end of STDIN (program exit)
+ - Fixed bug in db_insert.pl that would sometimes insert a duplicate of the same message
+
+3.0.75 - *RELEASE VERSION*
+ - Released May 16th, 2010
+ - Install Guide: http://nms.gdd.net/index.php/Install_Guide_for_LogZilla_v3.0
+ - User Guide: http://nms.gdd.net/index.php/LogZilla_3.0_User_Guide
+ - Forum: http://forum.logzilla.pro
+ - LogZilla is made available to end users under two licenses: a free, open-source version and a commercial version. 
+ - For inquiries about purchasing a commercial license, please email logzilla@gdd.net
+
+3.0RC1 - updates
+ - Added regex pattern match for Windows Snare logs in db_insert.pl
+ - Fixed htmlentities display on table output
+ - Added license information display to help>about
+ - Removed encryption from all but 1 file to keep the project "open source"
+ 0.59 
+    - Fixed missing ORDER BY clause in results table (for both normal and sphinx searches)
+ 0.64 
+    - Modified msg_mask filters and escape strings for message filter drilldowns. 
+        Drilldowns weren't escaping everything properly throwing an error for Sphinx.
+    - Added pattern match for ASA Mnemonics in db_insert.pl
+ 0.65 
+    - Modified install.pl to include host and port on sql imports. (http://forum.logzilla.pro/index.php/topic,159.0.html) i
+    - Added missing template_escape to syslog-ng.conf 
+    - Modified sphinx.conf charsets to include .'s and @'s as a whole string to allow searching for IP's and Emails
+    - Fixed DEFINE whitespace regex in db_insert.pl (http://forum.logzilla.pro/index.php/topic,154.0.html)
+    - DB: Modified settings table to set Deduplication to DISABLED by default - I think it's confusing too many people.
+        If you want deduplication, please enable it by changing the setting in admin>settings.
+    - Enabled multiple Sphinx Query types - please take the time to learn how to 
+        use them: http://sphinxsearch.com/docs/manual-0.9.9.html#matching-modes
+ 0.66 
+    - Changed display for Help menus to Modal Dialog
+    - DB: altered help table to increase the text size for descriptions
+    - Began adding content on all help dialogs
+ 0.67-0.71
+    - Completed help content
+    - Fixed invalid SITE_URL setting for the ioncube directories
+    - Fixed 'undefined' bug when recalling a saved chart
+ 0.72
+    - Added updated help file (forgot to include it on the last dump)
+    - Replaced regex for Mnemonics  in db_insert.pl with a better one.
+ 0.73
+    - Modified regex for Cisco Firewalls
+ 0.74
+    - Added better regex for Cisco Firewall Mnemonics
+    - Removed leading / from ioncube link in index.php
+
+3.0 RC1 - initial release
+ - Added menu item to reset ui_layout
+ - Added User, Group and Portlet Management
+ - Fixed Server Admin Page - all settings can be modified there now. (note that some changes will require a logout to take effect)
+ - Changed: http://logzilla.pro/index.php/topic,84.0.html (select hosts using like)
+     - I've added an option to the server settings table to use either
+ - Added chart drill-down (but only for ad-hoc's/pie's)
+ - Added dbinsert: $msg =~ s/.*(%UC_CALLMANAGER.*)/$1/; # Call manager messages repeat the timestamp as part of the message.
+ - Added back in message explode function - enable/disable in the settings table.
+ - Added in drilldown links for every piece of the results table (host, facility, priority, program, message, counter and notes).
+ - Fixed: butttons and image on main page should not be draggable
+ - Removed: google analytics - was only supposed to be there on my server
+ - Changed: Replaced Top Hosts chart with Messages Per Month - Top Hosts can now be generated by clicking "Graph" on the main page.
+ - Added Save option for Generated Charts
+ - Fixed: authtype = none wasn't working
+ - Added LDAP authentication method - settings can be done in the admin menu
+ - Changed: Fixed up the menu and added submenu items
+ - Added log retention setting during install
+ - Fixed: When demo user was deleted, the site was reverting back to authtype=none.
+ - Fixed: Check for duplicate when inserting a user into a group.
+ - Changed: Link for the forums in the navmenu (new url is http://forum.logzilla.pro)
+ - Added: Paginate option in the settings table (will allow you to specify the number of pages to paginate in the results table)
+ - Fixed: ToggleCheck not unselecting in the results table
+ - Changed: Removed export and some columns (like note entry) from the auto-refresh page (since you can't click on scrolling data anyways)
+ - Changed: Replaced the main popup Tip with a faster one - also added global options in the settings table.
+ - Added: New Logo to help>about and favicon
+ - Added: Menu now shows logged in user
+ - Fix: Changed default log path in db_insert to the one specified by user.
+ - Fix: Tip #'s were incorrectly numbered
+ - Removed old user's guide (.doc)
+ - Add: Option to scroll through all tips or disable permanently
+ - Fix: auto graph height not calculated when entering the graphs url directly.
+ - Added: Disclaimer at login that IE is not supported by LogZilla.
+ - Add: Event suppression (click on "edit" next to an event to use it)
+ - Changed db_insert to extract the syslog mnemonics (for cisco-based messages)
+ - db_insert: removed SEQ field
+ - Changed server settings to re-populate session variables so that changes take effect immediately (instead of logging out).
+ - added number of results return as well as the total matching rows to the results page
+ - Added MPS ticker to header along with average MPS
+ - db_insert now uses mysql's LOAD DATA INFILE so that larger systems won't bottleneck at 1kmps (a Mysql limit on number of inserts per second). The load data command allows for around 20kmps.
+ - Modified CISCO_TAG_PARSE and re_pipe (in db_insert) to handle windows event logs.
+ - Added Cisco Mnemonics to both the search page and the charts - to get Top Mnemonics, set Sort Order to "count" and Group By to "Mnemonic"
+
+
+3.0Beta16
+ - Removed perl 5.10 requirement from db_insert.pl
+ - updated db_insert.pl to fork and write to a pidfile
+ - Added an /etc/init.d script for logzilla
+ - Added copying of init.d script and logrotate.d config to their appropriate /etc locations
+ - Fixed bug: unable to use $ as password during install (also in db_insert.pl)
+ - Fixed bug: unable to search for all notes (!='')
+ - Fixed bug: check security - accessing pages as a non-admin
+ - Added Catch the enter key on the main search page.
+ - Added version detail for each release to help>about
+ - Changed: note editor was ugly
+ - Added: Ad-hoc charts
+ - Added: Save of adhoc charts (note: saved charts will appear under the Charts menu)
+ - Added: graph image export
+ - Added: graph data export to excel
+ - Wishlist: combine the above 2 so that excel contains the graph
+ - Todo: format the excel exports - could be *way* better
+
+3.0Beta14
+- Lots of great stuff!
+- Auto-refresh (Tail) is now available.
+    Tail Notes:
+    - It doesn't work the old way where you just had the whole page refresh, now it just refreshes the data in the page - welcome to the wonderful world of ajax :-)
+    - I am still shocked at just how bad IE handles things... (it doesn't like the tail feature, it also refuses to stop caching the charts regardless of what I try).
+    - Session timeout will not cause the tail page to stop working - so you can leave it running in your NOC. Note that if you navigate away, your expired session will then kick in and you'll need to re-login (but the url gets passed).
+- Added POST/GETs to/from the URL (you can manually enter your desired page and get what you want)
+- Added a URL save feature - after you search, you can click on the DISK icon in the results portlet to save that search. Saved searches will become available on the "History" menu after page refresh.
+- Added portal counts (all portals on the main page will show how many of each are found in the DB)
+    Portal counts:
+    - Systems with very high load may miss portal counts (>1500mps) but this won't affect operation. Also, you can disable portal counts in the settings table if you think it's slwoing you down.
+- Added a couple more charts
+    Chart Notes:
+    - Turned off the auto-refresh on the mps chart - there's just too much load with that many charts on a page (I'll probably split them into multiple pages someday).
+    - Did some scale testing - the server I'm developing on had 20m events and 30,000 hosts - query times are almost instant still.  the only exception is, of course, the charts, but they are cached (30 minutes for top hosts, 60 for top messages), so the next time you load the page it's fast.
+    - The Top messages chart gets dreadfully slow on larger systems - with 20m events, I got tired of waiting after about 3 minutes and killed the process. This is fairly understandable considering what it's trying to do (but I will continue to work on making it better).
+- Added Server Date and Time display on the main page (Datetime portlet). This will help you determine if your incoming logs match the server's time.
+- MODIFIED db_insert to use File::Tail instead of piping messages in.
+    This will allow syslog-ng to buffer all messages to disk so we don't drop anything on systems with high insert rates.
+    Also added a -b (background) option to the script to daemonize it - this will allow you to call it from /etc/init.d
+    To run db_insert - call it with these parameters:
+    -t /path_to_logs/syslog.log -b (-t specifies the file to tail, -b will daemonize it)
+    scale tests:
+    using tail - no messages were dropped by logzilla, however: using UDP - I sent 20k events over the network at around 400 mps and syslog-ng only logged about 4300 (this is not syslog-ng's fault, it's the nature of UDP).
+    NOTE: You will probably need to install the File::Tail cpan module
+    NOTE 2: Be sure to set up log rotation for your /path_to_logs directory (there's a sample config under contrib) unless you want to fill your HDD.
+- Probably a lot I forgot to write down (did I already mention column sorting and filtering on severity?)
+
+
+3.0 Beta13 (beta's 11 and 12 were small patches)
+- Added additional field for notes searching
+- Added watermarks in notes and messages search boxes with a count of the current entries for each
+- Fixed DBD execute error on install.pl (removed reference to old column in the table)
+- Fixed SITE_URL for edit_sm.png in the table portlet (remove extra /)
+- Fixed bug: http://logzilla.pro/index.php?topic=77.new#new (24 hour time on mps graph)
+- Added selectable search paramaters for messages and notes (you can now search using "=", "!=", "LIKE", "NOT LIKE", "RLIKE" and "NOT RLIKE")
+
+
+3.0Beta10
+- Removed msg2hex conversion - it wasn't allowing for case-insensitive searches or regex.
+- Replaced the grid in the search results - the original grid had a display bug that creator won't fix, and, quite honestly, I like what I have now much better!
+- Removed all tab functions and am now using posts/gets - this will allow for url saving and also speeds up page loads.
+- Added in Excel (and now PDF) exporting capability
+- Added severity color-coding back in
+- Added filters for severities on the results page.
+- Fixed some of the queries (they should be a lot faster now...I hope)
+- Added counts for each portlet on the main page (so it shows something like "2,102,192 Messages" instead of just "Messages"
+- Built a new nav menu that (I hope) suits the interface better.
+- Almost have the server-settings table working, waiting for a response from the grid creator.
+- Theme switcher doesn't appear to work in IE (there's a shocker).
+- Added URL post/get capabilities (you can now enter searches on the URL line)
+- Added a search save feature - allows you to save searches for later retrieval, just click on the DISK icon on the search results header.
+- Note that host and messages charts are cached! Change the cache timeout in the settings table if you don't like the defaults :-)
+- Added missing files (images missing in apache error.log)
+- Added naming feature to saved searches (it was just saving the url)
+
+
+3.0beta9
+Bug Fixes and enhancements
+
+- Mysql partitioning shuts off across restarts - be sure to add it in your my.cnf as noted here: http://logzilla.pro/index.php/topic,71.0.html
+- CAN'T FIX - bug: http://logzilla.pro/index.php/topic,33.0.html (<foo@com> truncated in messages - see http://logzilla.pro/index.php/topic,33.0.html)
+- FIXED - bug: http://logzilla.pro/index.php/topic,51.0.html (wrong sequence in MPD chart)
+- FIXED - bug: http://logzilla.pro/index.php?topic=49.new;topicseen#new (use "127.0.0.1" as $dbserver instead of "localhost")
+- Mostly Addressed - bug/enhancements: http://logzilla.pro/index.php?topic=55.new#new
+- FIXED - bug: http://logzilla.pro/index.php?topic=54.new#new (missing images in apache error log)
+- OUTSOURCED - enhancements: http://logzilla.pro/index.php?topic=42.new#new (db_insert.pl cpu usage)
+- FIXED - bug: http://logzilla.pro/index.php?topic=41.new#new (remote db support)
+- FIXED - bug: http://logzilla.pro/index.php?topic=34.new#new (install.pl needs DBPORT)
+- fixed bug: duplicate messages printed in chart_topmsgs
+
+
+- Note: MAJOR CHANGES
+- I've build in new code that converts all incoming messages to HEX values - this will allow for much smaller tables and should help query speeds. To convert them back to normal, you can use the msg_decode function included in common_funcs.php
+- Added a new caching table to address slow drawing times on larger charts
+
+3.0
+Lots of changes, this will no doubt need to be a fresh install. Sorry, but upgrading would be next to impossible.
+
+ - THIS VERSION OF LOGZILLA REQUIRES MYSQL 5.1 OR BETTER
+
+ - Re-wrote most of the frontend code - new interface (yay!)
+ - Replaced old graphs with shiny new ones
+ - Added MySQL Partitioning to the log table and removed the need for any logrotation.
+ - Added MySQL Events for automatic Partitioning each day. Partitions will be removed after 30 days by default.
+ - Cleaned up a TON of old code.
+ - Removed $LEVEL from syslog-ng.conf as it is the exact same thing as the PRIORITY macro.
+ - Removed LEVEL from db_insert.pl and all related php files.
+ - Built new navigation menu which also includes a new Admin page for setting all site variables.
+ - Moved most of the config.php settings to a table in the database, all settings can now be modifed using the new admin page from the pulldown menu.
+ - Changed all files to use settings table instead of config.php
+ - db_insert.pl is now capable of processing 38,000 Messages per second without dropping any. It will have a lag on processing them, but not a single message was dropped during my tests.
+ - Removed dbgen.pl, use the new logreplay.pl instead for testing which will actually send message to syslog-ng instead of just inserting dummy data into the MySQL table.
+	note: you will need to compile spoof_syslog.c in order to use it.
+	to compile, simply type "gcc spoof_syslog.c -o ./spoof_syslog"
+ - Added Sphinx FULL TEXT search capabilities
+	More information can be found at http://sphinxsearch.com/docs/current.html
+	You'd better read it :-)
+ - Replaced the search message box on the main page with a Sphinx search. This new search allows for many more search options
+	Feel free to explore the different types at: http://sphinxsearch.com/docs/current.html#searching
+ - Hid search query when debug is enabled and Sphinx is used. The results would take up the whole page. 
+	To see the query, view page source instead.
+ - Changed CRONTAB entries, be aware! Please look at the scripts/contrib/system_configs/crontab file.
+ - Changed the search_cache to a MyISAM table type. Memory type wasn't working well on smaller systems with low ram and the table shouldn't get so large (millions of rows) that it would be slow to select rows anyways.
+ - Addded several Ajax features in:
+	Front page: All "modules" (hosts, programs, facilities, etc.) can be rearranged to the user's liking.
+	Search results: the changes here should be obvious, but it's all done through a json backend now.
+ - Added query logging in order to help debug long/bad queries. To enable set it in config.php
+
+Needs testing:
+ - Certificate based authentication: I have no way to test this.
+
+2.9.9o
+ - Removed the OPTIMIZE command from log rotation due to slow response in larger DB's
+ - Fixed bug in reloadcache that was deleting cache entries before checking to see if they even needed updating (essentially causing lpdcache to re-insert all cache data for all tables on every run).
+ - Modified common_funcs.php to use a SELECT DISTINCT on the program field instead of using array_unique in order to speed up queries in larger DB's.
+
+2.9.9n
+ - Modified the way program names are inserted into the DB from db_insert.pl 
+   (stripped the full path so that only the program name itself would be inserted)
+ - Modified the reload_cache function in common_funcs.php to not use RLIKE
+ - Modified fixpaths.sh to do a little better error checking
+ - Fix a bug in regularresult.php where $msg should have been called as $row['msg']
+
+2.9.9m
+Enhancement
+ - Added the ability to filter by clicking on the severity legend at the top right of the search results.
+   See http://code.google.com/p/php-syslog-ng/issues/detail?id=124 for more detail.
+
+2.9.9l
+ - Removed the previously applied patch for sorting by id field as secondary - it was messing up sorting on fields when deduplication was enabled - http://code.google.com/p/php-syslog-ng/issues/detail?id=132
+ - Added the source code for spoof_syslog into the contrib/logreplay/ directory
+
+2.9.9k
+ - Added a specific regex filter for Fortigate Firewalls to the db_insert.pl script. Apparently Fortigate decided to create their own syslog standard :-)
+ - Added crontab change as requested in http://code.google.com/p/php-syslog-ng/issues/detail?id=90&can=1
+ - Added better escape handling for search form - fix for http://code.google.com/p/php-syslog-ng/issues/detail?id=111
+ - Added handling of cache for PROG, FAC, etc. when using the MERGELOGTABLE as CACHETABLENAME in config.php - http://code.google.com/p/php-syslog-ng/issues/detail?id=133
+ - Added a second ORDERBY statement to sort by ID in regularresult.php - http://code.google.com/p/php-syslog-ng/issues/detail?id=132
+
+2.9.9j
+Updates/Additions/Fixes
+ - Added a filter for the SEQ field to disable it from being displayed in regurlarresult.php
+ To show it, set SEQ to TRUE in your config.php
+ - Minor fix to regularresult.php for sev4 not displaying the proper color
+ - Added a file lock to reloadcache.php for larger systems (so we don't overlap scripts after 5 minutes)
+ - Added command line options to db_insert.pl, to use, just type "db_insert.pl -h"
+ - Added a "self test" option to db_insert.pl, type "db_insert.pl -h" for instructions
+ - Removed comments in reloadcache.php that was not allowing a host count for all_logs when setting USETABLE to MERGELOGTABLE in config.php
+ - Added an ABSPATH variable to config.php
+ - Modified fixpaths.sh in the scripts/ directory to use the ABSPATH variable
+
+2.9.9i
+Minor Update
+ - db_insert.pl was opening too many instances on some hosts and not exiting in a timeley manner. I added a "wait" for the child process to exit.
+ - Added better benchmark time to db_insert.pl
+
+2.9.9h
+Minor update
+ - Added signal handler to db_insert to avoid zombie processes
+ - Added better regex for DBHOST in db_insert.pl to handle dotted hosts
+ - Modified scripts/contrib/system_configs/syslog-ng.conf and changed sync() to flush_lines() in order to support newer versions of syslog-ng (v2.x and up)
+
+2.9.9g
+Bug fixes
+ - Same as 2.9.9b - Fixed a bug in db_insert.pl (forgot to enable inserts when I uploaded back to the project)
+
+2.9.9f
+Enhancements
+ - Re-worked the forking process in db_insert.pl
+ - Now using perl's built-in fork function instead of Parallel::ForkManager - after running multiple tests, I found forkmanager to be about 10x slower. 
+
+2.9.9e
+Enhancements
+ - More work on db_insert.pl
+
+2.9.9d
+Enhancements
+ - Worked on forking for db_insert.pl a bit more
+
+2.9.9c
+Bug fixes
+ - Fixed regex in db_insert.pl to work with messages not sending a program field
+ - Added internal timestamps to inserted messages versus incoming timestamps
+ - Added a fixpaths.sh script to the scripts/directory to update paths in all files
+
+2.9.9b
+Bug fixes
+ - Fixed a bug in db_insert.pl (forgot to enable inserts when I uploaded back to the project)
+
+2.9.9a
+Bug fixes
+ - Added forking to db_insert.pl to eliminate high CPU utilization
+ - Fixed a big nasty bug that wasn't getting all the duplicates properly when SQZ was enabled
+
+2.9.9 (Beta)
+New features (yay!)
+Lots of changes, so it's really important that you read the details section following the summary below.
+####
+# Summary of changes:
+####
+* 1. Export to Excel Spreadheet from regularresult.php and from graphs (doesn't export the graph, exports the rows found)
+* 2. Message Filtering (messages will explode and allow filtering on each piece of the message)
+* 3. New Graph Types (on main search page, select "Graph Type")
+* 4. Removed the DATETIME column from the database as it is exactly the same as the FO column
+* 5. Globally replaced count(*) with SUM(counter) and removed checks for SQZ to decide which one to use
+* 6. db_insert.pl has the capability to deduplicate messages. (SqueezeDB.php will be removed from the source code).
+* 7. Changes to syslog-ng.conf - read the Details section below.
+* 8. Patched login.php and common_funcs.php
+* 9. Added a contrib directory under scripts/ and moved some files there that were in the scripts/ directory
+* 10. Added a logreplay.pl script to the contrib directory
+* 11. Added a minor fix to display SEQ field properly in regularresult.php
+
+####
+# Detailed Information: you better read this, it's pretty important :-)
+####
+* 1. Added ability to export search results to Excel (includes support for Excel5, Excel 2007 and CSV)
+	The Excel library I've included is very cool - I encourage you to make your reports better looking!
+	Visit http://phpexcel.codeplex.com/ to learn more.
+	Please contribute back if you come up with something fancy/cool!
+* 2. Added option to filter search results on individual pieces of messages (set MSG_EXPLODE in config.php)
+* 3. Added new "Graph Type" dropdown to the main search menu. This will allow searching for TopX: Hosts, Messages, Priorities, etc.
+	instead of the original which was to just graph on Top Hosts.
+	Please be aware that searching for Top Messages can take a *really* long time on larger databases 
+	(this is because Mysql has to calculate large rows of text which cannot be indexed)
+* 4. The original DATETIME column has been removed from all tables (and code). The reason is that the FO (first occurrence) 
+     column is exactly the same (it's the first time we saw that message). 
+* 5. When I implemented the SQZ feature, I had to do checks everywhere to decide how to get current counts,
+	but it occured to me that since every message is inserted with a default counter of 1, there's no need 
+	to of an if-then in the code - I can just do a SUM(counter) for any row and still arrive at the same answer.
+* 6. Moved the SQZ feature to the db_insert.pl script that will provide much better message deduplication than 
+	the old php version (SqueezeDB.php).
+	(If Squeeze is disabled in your config.php, the script will simply insert records as normal)
+	Note: Enabling this feature will increase CPU usage since it has to query the database and perform functions 
+	such as updating and deleting records, etc.
+	I make no guarantees as to the scalability of the function - it will likely slow down message insertion rates. 
+	In my testing, the max insert rate I could achieve was around 215 messages per second (at which point, messages 
+	started dropping from the buffer) - which is pretty fast, but if you have a large network 
+	(like 10-20,000 devices) I'd probably recommend you not use this feature.
+	To enable this feature:
+	A. In config.php, set SQZ_ENABLED to TRUE
+		You will also want to set the other SQZ* variables to suit your needs such as TIME and DIST
+
+* 7. Patched login.php and common_funcs.php for the following issues:
+	http://code.google.com/p/php-syslog-ng/issues/detail?id=73
+	http://code.google.com/p/php-syslog-ng/issues/detail?id=35
+* 8. Moved some files to contrib to help clean up the scripts/ directory
+* 9. Created contrib/logreplay/logreplay.pl to allow someone to "replay" a syslog dump file back into the syslog receiver.
+	It's meant for Cisco messages only, so if you want to use it for something else you may need to alter the regex in the script.
+	Note that as of this version of the script, the following vars aren't used:
+        # $host
+        # $month
+        # $day
+        # $time
+    I would like to figure out a way to rewite the syslog packet to show these fields but can't figure out how just yet.
+    If you know how, please tell me :-)
+
+===================================================================================================================================
+2.9.8m
+- Changed msg parsing regex for cisco abbreviations (configurable by the config parameter CISCO_TAG_PARSE) to avoid issue 84.
+- Changed datetimepicker format for calendar to output a more international form.
+- Improved time regex validation.
+- Applied patch for issue 104.
+- Fixed 'Allowed memory size exhausted' when reloading cache (see issue 86).
+- Changed type for id column from mediumint to bigint unsigned. Also made seq column unsigned.
+    You can do the following procedure if you wish to update your current table structure and minimize downtime:
+	DROP TABLE all_logs;
+	Create a templog table with the new structure (see the create statement at html/install/sql/dbsetup.sql)
+	ALTER TABLE logs RENAME oldlogs;
+	ALTER TABLE templog RENAME logs;
+	INSERT logs (host,facility,priority,level,tag,datetime,program,msg,seq,counter,fo,lo) select 
+	host,facility,priority,level,tag,datetime,program,msg,seq,counter,fo,lo from oldlogs;
+	DROP TABLE oldlogs; (if everything went well)
+  
+    For the rest of log tables, you can just run this query for each log table:
+	ALTER TABLE logsYmd MODIFY id bigint unsigned not null auto_increment, MODIFY seq bigint unsigned;
+
+2.9.8k
+- Fixed a few bugs that got introduced...
+
+2.9.8g
+* Update
+- Fixed Calendar (changed to a better date picker)
+- Changed SQL type for 'seq' in the database from auto_increment to int
+	to update your version just type:
+	ALTER TABLE logs MODIFY seq bigint(20);
+	from within mysql
+	NOTE: this will mess up your MERGE table, you must change it on all old tables as well and re-run logrotate.php to create a new ALL_LOGS table.
+
+- Fix for SqueezeDB not passing tables properly - Thanks Robin!
+  Email from Robin:
+  ###################
+ // CDUKES: Aug 7, 2008: Added for command line passing of tables
+$Tables = array();
+if ($argc > 1) {
+        foreach ($argv as $arg) {
+                if ($arg != $argv[0]) {
+                        $tableArray = get_logtables($dbLink);
+                        foreach($tableArray as $table) {
+                                if ($table == $arg) {
+                                        array_push($Tables, $arg);
+                                }
+                        }
+                }
+        }
+        if (!in_array($arg, $Tables)) {
+            echo "Error, $arg doesn't appear to exist\n";
+        }
+} else {
+        array_push($Tables, DEFAULTLOGTABLE);
+}
+
+Also, if you are interested in including it as a sample for the data based squeeze, here's the shell script I have evolved from your help:
+ 
+#!/bin/sh
+table="logs`date +%Y%m%d --date='4 days ago'`"
+php /srv/www/php-syslog-ng/scripts/SqueezeDB-v2.3.php $table >> /var/log/php-syslog-ng/squeeze.log
+mysqlcheck -usyslogadmin -psyslogadmin --optimize syslog $table >> /var/log/php-syslog-ng/squeeze.log
+echo "flush tables" | mysql -usyslogadmin -psyslogadmin syslog >> /var/log/php-syslog-ng/squeeze.log
+  ###################
+
+
+
+2.9.8f
+* Update
+- re-commented out the check for all_logs in reloadcache.php - it's not scaling properly on large systems. Also, I don't see the need for it since we're caching on ea
+ch log individually this way instead of relying on a massive search through a merge table.
+- Added Certificate Based Authentication by Miguel Tormo
+  Ref: http://code.google.com/p/php-syslog-ng/wiki/CertificateAuthentication
+
+2.9.8e
+* Update
+- Fix for lpdcache not detecting when SQZ was disabled
+  There's a .patch file in the scripts directory if you just want to run that against your 2.9.8d install
+  just run: patch -p0 < lpdcache.patch in the scripts/ directory
+
+2.9.8d
+* Update
+- Fix for tailresult not displaying columns correctly
+
+2.9.8c
+* Update
+- Forgot to include the new reloadcache.php
+- Fixed missing config.php.dist
+
+2.9.8b
+* Update
+- Forgot to include the new common_funcs.php
+
+2.9.8a
+* Updates/Enhancements
+- Added Front page graph for daily log count, enable/disable through config.php
+- Changed DEBUG in config.php from '0' to FALSE
+- Re-enabled SQL output on search results if DEBUG=TRUE
+- Added sql staments for Mysql 5.x users to fix problem with drop and alter commands (http://nms.gdd.net/index.php/Installation_Guide#Caveats)
+- Fixed javascript populate for "duplicates" field on search page
+- Fixed SqueezeDB issue where duplicate count was not updating properly (http://code.google.com/p/php-syslog-ng/issues/detail?id=70)
+- Added SQZ Savings calculation to search page (shows how much of a percentage the SqueezeDB script has saved overall - shows up next to the "Duplicates" dropdown as a percentage)
+- Altered graphit.php to show results based on SQZ if enabled.
+- Found and fixed a few more short tags  (http://code.google.com/p/php-syslog-ng/issues/detail?id=20&can=1&q=tag)
+- Modified SqueezeDB to handle large systems a little better - please read changes in scripts/SqueezeDB-v2.2.php
+- Fixed a bug in reloadcache.php that was trying to cache the merge table which slows reloadcache down considerably on large systems (
+  // Ref: http://code.google.com/p/php-syslog-ng/issues/detail?id=73
+- Changed the LPD graph to display numbers in a more readable manner (such as 2.4M instead of 2400000) (see blocks/graph-logs_per_day.php)
+- Added Caching for front page graphs for performance increase
+  Note: NEW FILE ADDED - ldpcache.php in the scripts directory which is called from reloadcache.php
+  Note2: This REQUIRES a change to your search_cache table:
+  ALTER TABLE search_cache MODIFY type enum('HOST','FACILITY','PROGRAM','LPD') default NULL
+- Added SQZ (fo,lo, counter) and LPD (LPD) columns to the install SQL file.
+- Fixed errors when CEMDB = OFF, REF: http://code.google.com/p/php-syslog-ng/issues/detail?id=68
+
+2.9.8 
+* Updates/Enhancements
+- Fix for tail sorting on facility fields:
+ add 
+ if (!$table) { $table = DEFAULTLOGTABLE; }
+ to line 80 of tailresult.php
+- Added 'addslashes' function to sql query cache inserts in common_funcs.php
+  // Ref: http://groups.google.com/group/php-syslog-ng-support/browse_thread/thread/eda3c96999889b47
+- Added Web Basic Auth to login for mod_auth_krb5 users
+  // Ref: http://code.google.com/p/php-syslog-ng/issues/detail?id=62
+- Removed search page option: Collapse Identical Messages (it never worked and is replaced by the squeezeDB functionality)
+- Added search page option for "Duplicates" - only shows up if 'SQZ_ENABLED = TRUE' in confg.php
+  This option allows you to search for any duplicate lines created by the SqueezeDB feature.
+- Removed CALLHOME, it was fairly useless :-)
+- Modified distribution tar in response to http://code.google.com/p/php-syslog-ng/issues/detail?id=66
+- Removed INSTALL_STEPS file and replaced with Wiki Page @ http://nms.gdd.net/index.php/Installation_Guide
+
+TODO:
+- Re-write SqueezeDB in PERL for faster processing and scalability.
+- Need testers for SqueezeDB to verify that we aren't generating false-positives.
+
+
+2.9.7 
+* Updates/Enhancements
+!!! IMPLEMENTED SqueezeDB.php file in scripts/ !!!
+- Be sure you add this to your CRON!
+NOTE: If you have a very large database (more than 10k rows in 5 minutes), it WILL NOT scale. 
+Next release I hope to have a more scalable solution in place.
+More info on this is at http://code.google.com/p/php-syslog-ng/issues/detail?id=47
+  Cron Entry for SqueezeDB:
+ */5 * * * * php /www/php-syslog-ng/scripts/SqueezeDB-v2.0.php >> /var/log/php-syslog-ng/squeezedb.log 
+
+   NOTE: Versions of php-syslog-ng 2.9.5d and below will need to alter the database to use this script
+   ALTER TABLE logs ADD counter INT NOT NULL DEFAULT 1;
+   ALTER TABLE logs ADD fo datetime default NULL;
+   ALTER TABLE logs ADD lo datetime default NULL;
+
+- Added LDAP Auth section for Microsoft AD
+- Added 'DEMO' to config.php to change login page notification of demo site
+- Added FO, LO, and Count fields for squeezdb implementation
+- Added config.php variable for calculating hostcount on search page
+- Fixed a bug in login.php that wasn't notifying you of a failed password auth (it just put you back to the login screen)
+- Fixed bug for missing TAIL_REFRESH_SECONDS from config.php on new installation (http://code.google.com/p/php-syslog-ng/issues/detail?id=51)
+- Added a small "callhome" feature includes/callhome.php to help me get an idea of demographics - enable or disable in config.php (CALLHOME) setting.
+- Fixed FO, LO and COUNT Sort fields (added logic for sorting) in regularresult.php
+- Split Program and MSG into two columns in both regularresult and tail
+- Fixed issue 20: "Parse error: syntax error, unexpected $end in" (http://code.google.com/p/php-syslog-ng/issues/detail?id=20)
+- Fixed issue 27: "Tab stops on login screen" (http://code.google.com/p/php-syslog-ng/issues/detail?id=27)
+- Fixed issue 28: "Back to search does not remember search criteria" (http://code.google.com/p/php-syslog-ng/issues/detail?id=28)
+- Implemented issue 31: Regex Enhancements (http://code.google.com/p/php-syslog-ng/issues/detail?id=31)
+- Fixed issue 33: "custom title for tail queries" (http://code.google.com/p/php-syslog-ng/issues/detail?id=33)
+- Fixed issue 35: "save post variables through login procedure" (http://code.google.com/p/php-syslog-ng/issues/detail?id=35)
+- Fixed issue 49: Path settings in some files (http://code.google.com/p/php-syslog-ng/issues/detail?id=49)
+- Fixed issue 51: "Tail reloads page many times in a second" (http://code.google.com/p/php-syslog-ng/issues/detail?id=51)
+- Fixed issue 52: "Parse error: syntax error, unexpected $end in" (http://code.google.com/p/php-syslog-ng/issues/detail?id=52)
+- Fixed issue 53: "Parse error: syntax error, unexpected $end in" (http://code.google.com/p/php-syslog-ng/issues/detail?id=53)
+- Fixed issue 54: "Parse error: syntax error, unexpected $end in" (http://code.google.com/p/php-syslog-ng/issues/detail?id=54)
+- Fixed issue 55: "Input validation error for Program" (http://code.google.com/p/php-syslog-ng/issues/detail?id=55)
+- Fixed issue 56: "Search Option SYSLOG PRIORITY - HTML failure" (http://code.google.com/p/php-syslog-ng/issues/detail?id=56)
+- Fixed issue 57: Error check for "tail" operation on anything other than the default log table (http://code.google.com/p/php-syslog-ng/issues/detail?id=57)
+
+
+2.9.6
+* Enhancements
+- Changed "DEFINE("TTF_DIR","/usr/share/fonts/truetype/msttcorefonts/");" in includes/jpgraph/jpg-config.inc
+- Modified logrotate.php to allow for better error handling of duplicate tables 
+- Also removed myisamchk since it was causing table crashes for people.
+- Added new performance testing tools to scripts/tests/ (see README in that directory for info)
+- Modified reloadcache to remove caching based off of MERGELOGTABLE only, it was redundant.
+- MODIFIED DATABASE TABLE "search_cache", please update your tables to this:
+------------------- BEGIN SQL MODIFICATION---------------------
+mysql> drop table search_cache;
+Query OK, 0 rows affected (0.00 sec)
+
+mysql> CREATE TABLE `search_cache` (`tablename` varchar(32) default NULL,`type` enum('HOST','FACILITY','PROGRAM') default NULL, `value` varchar(128) default NULL, `updatetime` datetime default NULL,   INDEX `type_name` (`type`,`tablename`) ) ENGINE=MEMORY;
+Query OK, 0 rows affected (0.01 sec)
+------------------- END SQL MODIFICATION---------------------
+- Note that I added a 'PROGRAM' field to the enum and changed the database engine to MEMORY.
+
+- Fixed broken links for Common Graphs (line wrap was breaking the url)
+- Fixed search criteria for "Today" graph (it was searching the MERGELOGTABLE instead of DEFAULTLOGTABLE which take a *long* time on large systems
+- Fixed small cosmetic bug in graph output (it was showing a count of total hosts, instead of a sum of total rows found for TopX)
+- Fixed minor cosmetic issues with graph results (displaying total rows in results_subheader, displaying topx on graph)
+- Implemented Regex search capabilities provided by bpkroth (Big thanks!)
+  http://code.google.com/p/php-syslog-ng/issues/detail?id=31
+ Changes as noted by bpkroth:
+ - Added a program list similar to hosts.
+ - Optional RegExp matching of hosts, programs, and messages
+ - If RegExp matching is not used, the host/program "like" fields will
+   accept comma or semicolon delimited lists of hosts to match
+ - A slight cosmetic change to the message input area so they line up.
+ - Results pages display the facility, program and host, as links for one click filtering.
+ - Results page headers allow you to adjust the results ordering via a link.
+ - Removed popups from messages that aren't found in CEMDB
+ - Date is only displayed if it's different from today
+ - Previously if $row['count'] > 1, CEMDB messages were never shown. This is fixed.
+ - Search page now uses $_SESSION variables to remember what you last entered into the form
+   so you can easily adjust the query rather than having to start over from scratch
+ - Added the ability to define the refresh rate of the tail page in config.php.
+   Make sure you configure your server to Allow overrides (AllowOverride Options)
+   Ref: http://us2.php.net/manual/en/configuration.changes.php
+
+2.9.5d
+* Minor fixes
+- Small bug fix
+
+2.9.5b
+* Minor fixes
+- Fixed Issue 36 (logrotate errors) http://code.google.com/p/php-syslog-ng/issues/detail?id=36
+  note that you need to re-grant priveleges (GRANT ALL PRIVILEGES on syslog.* to syslogadmin@'%';) to fix this.
+- Removed include from common_funcs for config.php and moved it to login.php
+  it was messing up the reloadcache.php
+- Fixed issue #45 (unable to use "ACL = FALSE" in config.php)
+  http://code.google.com/p/php-syslog-ng/issues/detail?id=45
+
+
+2.9.5a
+* Minor fixes
+- Added a .htaccess file to check for proper php global settings 
+- note that you must set "AllowOverride All" in your apache config to allow .htaccess to work.
+- Modified the regex match for cemdb stuff in tailresult and 
+  regularresult on incoming syslog messages to make it look better
+- removed a couple of old files
+
+2.9.5
+* Lots of code changes
+- Sorry...no upgrade for this one...I screwed up and used 2.9.3l as the base :-)
+  However, there are no database changes, so you *should* be able to just copy over your current html/ directory
+- Modified UMS to include LDAP Authentication
+- New login/logout screen and procedures
+- Fixed user ACL check (it only allowed the "admin" user to modify acl's before)
+- Fixed php short_open_tag issue: http://code.google.com/p/php-syslog-ng/issues/detail?id=32
+- Added fix for issue #36 (logrotate failures) http://code.google.com/p/php-syslog-ng/issues/detail?id=36
+- Applied patch for issue #43 (addcslashes) http://code.google.com/p/php-syslog-ng/issues/detail?id=43
+- Removed top information bar showing fairly useless information such as user's IP address.
+  per request from http://code.google.com/p/php-syslog-ng/issues/detail?id=25
+- Added a new favicon.ico and png under images/
+- Fixed installer to import CEMDB better and faster
+- Reduced install size by quite a bit since the cemdb is now gzipped.
+- Did a whole bunch of other things I'm probably forggetting :-0
+- Added a paypal link :-)
+
+2.9.4
+* New and improved CEMDB (yay!)
+- Added note in troubleshooting doc about setting magic quotes to "on"
+- Updated CEMDB with new data (about twice as many messages now!)
+- Note that this required a change to the CEMDB.class.php file!
+- added the "upgrades/" directory so folks could just patch to new versions. 
+  (note that you will need to manually install the new CEMDB if you use this method,
+  it's located in html/install/sql/cemdb.sql)
+  To manually install the new CEMDB:
+  1. Backup old sql:
+  mysqldump syslog cemdb > cemdb.old.sql
+  2. Delete old data from database:
+  echo "delete from cemdb" | mysql -usyslogadmin -psyslogadmin syslog
+  3. Import new data:
+  mysql syslog < html/install/sql/cemdb.sql
+  4. Apply upgrade patch:
+  patch -p0 < upgrades/2.9.3l_to_2.9.4.patch
+  # That should do it, if not, you may need to just re-run the install by zeroing out your config.php file
+- Made changes to the way syslog-ng stores its data into mysql (changing the syslog-ng.conf file)
+- Thanks go to Michael Baeker for this one!
+- Reference: http://www.baecker.com/linux/syslog-ng-in-mysql-datenbank-loggen.html
+- These changes no longer require the use of pipes so you'll want to remove:
+  "@reboot /www/php-syslog-ng/scripts/syslog2mysql.sh >> /var/log/php-syslog-ng/mysql.log 2>&1"
+  From your crontab file (crontab -e to edit the file) after making the changes to syslog-ng.conf.
+  Be sure to replace the username and password in the new syslog-ng.conf with the proper credentials.
+
+2.9.3l
+* Various fixes
+- Added chk_config to index.php to redirect to install screen if config.php is missing settings
+- Added check to common_funcs for proper PHP settings 
+- Changed function perform_query to do better error handling - added mysql_error() 
+- Changed JS to 'JS' in login.php (:%s/JS/'JS'/g)
+- fixed missing $add variable in common_funcs.php
+- Added .htaccess to make sure register_globals and magic_quotes_gpc were enabled for this site (not necessary globally in php.ini)
+- Added somewhat better login handling to login.php
+
+2.9.3k
+- Fixed improper check for $username in login.php (removed pointless code)
+
+2.9.3j
+* Various Updates/fixes
+- Applied cosmetic fix for JS definition missing from g_redirect function (http://code.google.com/p/php-syslog-ng/issues/detail?id=24)
+- Included configure.php fix for issue 1 (http://code.google.com/p/php-syslog-ng/issues/detail?id=1)
+- Changed all php shorthand echo's (in the includes directory) to longhand (http://code.google.com/p/php-syslog-ng/issues/detail?id=20)
+- Applied fix for logrotate.php (http://code.google.com/p/php-syslog-ng/issues/detail?id=21)
+- Added check for magic quotes to resolve issue 16 (http://code.google.com/p/php-syslog-ng/issues/detail?id=16)
+- Moved version information from the html_header to about.php
+- Cleaned up about.php and appended CHANGELOG info.
+
+2.9.3i
+* Ugh
+- The patch supplied for CEMDB (http://code.google.com/p/php-syslog-ng/issues/detail?id=19)
+  display threw an error on my test server, so I changed:
+//if (preg_match("/%[:alpha:].*:/", $row['msg']) == 0) {
+if (preg_match("/%[[:alpha:]]+$/", $row['msg']) == 0) {
+in regularresult.php
+
+
+2.9.3h
+* Minor updates
+- Applied CEMDB display patch from Sergio Guzman (http://code.google.com/p/php-syslog-ng/issues/detail?id=19)
+- Applied speed increase posted by patrickdk77 (http://code.google.com/p/php-syslog-ng/issues/detail?id=17)
+- Applied PHP Notices patch from emmanuel.crespy (http://code.google.com/p/php-syslog-ng/issues/detail?id=18)
+
+2.9.3g
+* Applied some fixes posted on the Google Code site
+- http://code.google.com/p/php-syslog-ng/issues/detail?id=14
+- http://code.google.com/p/php-syslog-ng/issues/detail?id=15
+- Created INSTALL-STEPS for step-by-step installation instructions
+
+2.9.3f
+* Minor update
+- Removed reference to Google Analytics (which I use on my server)
+- If you want to use it, just create a file called "includes/google-analytics.html" and add:
+	<script src="http://www.google-analytics.com/urchin.js" type="text/javascript">
+	</script>
+	<script type="text/javascript">
+	_uacct = "ACCTNUMBER";
+	urchinTracker();
+	</script>
+(Replace ACCTNUMBER with your analytics account number)
+
+2.9.3e
+* Minor fix to my previous minor fix :-)
+- After converting the eol characters to carriage returns, it had placed an extra ^M at the bottom of common_funcs.php
+  (after the last ?>) which causes headers to get messed up in php and throw a "headers already sent" error.
+  
+2.9.3d
+* Minor Fix
+- It appears that includes/common_funcs.php was missing eol characters...
+
+
+2.9.3c
+* Minor fixes
+- Changed path to config.php in scripts/drop-old-tables.php
+- Restored config.php.dist (it was empty)
+- Made some minor changes to scripts/resetusers.sh
+
+2.9.3b
+* Minor fixes
+- zero'd out config.php to allow the installer to run
+- Added memory fix to the TROUBLESHOOTING-INSTALL doc:
+
+2.9.3a
+* Minor fixes to 2.9.3
+- Increased minimum memory requirements from 64M to 128M
+- Removed duplicate table creation of the cemdb table from the install gui 
+  (2.9.3 made a change to it and I mistakenly created the table twice instead of replacing it)
+- Had to replace cemdb.sql from Daniel Berlin <mail@daniel-berlin.de> with the old one. 
+  The new one was preventing the installer from working properly...not sure why.
+  The new one from him has been renamed to "cemdb.dberlin" in the install/sql directory
+  Once the web install completes, you can load the newer format by doing the following:
+  # echo "delete from cemdb;" | mysql syslog
+  # mysql -u<user> -p syslog < cemdb.dberlin 
+  replace "<user>" and "syslog" accordingly.
+  I don't know why his imports fine from the command line but fails during the install. 
+  Anyone wanna take a crack at it?
+- Added "resetusers.sh" into the scripts directory. This script will 
+  DELETE ALL USERS and add the username/passwords for "admin/admin" and "demo/demo"
+
+
+2.9.3
+* Minor fixes included from Daniel Berlin <mail@daniel-berlin.de>
+- Issue # 8 patched (http://code.google.com/p/php-syslog-ng/issues/detail?id=8&can=1&q=)
+- Fixed missing field in emd.pl (Cisco Error Message Database)
+  Notes from Daniel:
+  The current version fails to extract the 'message' field
+  (3rd field, see below):
+ Generated by old emd.pl >>>
+  78836,'%C4K_POWERSHELF-3-INVALIDPACKETRECEIVED','ARRAY(0xc54eba0)','This
+  message indicates that the GCP protocol stack has received a packet of
+  an unexpected type. This is a transient error condition; the protocol
+  might recover automatically on the next discovery cycle.','This is an
+  informational message only. No action is required.','2006-07-03 15:53:41')
+ <<<
+ Generated by new emd.pl >>>
+  C4K_POWERSHELF-3-INVALIDPACKETRECEIVED
+  (3006, '%C4K_POWERSHELF-3-INVALIDPACKETRECEIVED', 'We got an invalid
+  packet', 'This message indicates that the GCP protocol stack has
+  received a packet of an unexpected type. This is a transient error
+  condition; the protocol might recover automatically on the next
+  discovery cycle.', 'This is an informational message only. No action is
+  required.', '2007-02-14 14:56:17')
+ <<<
+- Daniel added a new Class for CEMDB lookups (CEMDB.class.php)
+  It caches entries already looked up in the cem database
+  and results in much less database load.
+  E.g. If there are 10 messages like this one:
+  %AAA-3-IPILLEGALMSG: Fan 1 had a rotation error reported.
+  %AAA-3-IPILLEGALMSG: Fan 2 had a rotation error reported. 
+- Removed the jpgraph docs and examples (which saves ~6MB 
+  and does not change jpgraph's behavior)
+  i.e.:
+  html/includes/jpgaph/Examples
+  and
+  html/includes/jpgaph/docs
+
+ 
+2.9.2a(r14)
+* Minor fixes included from Tom Cort <linuxgeek@gmail.com>
+- php-syslog-ng-2.9.2a-r13-check-exec-mem-limits.patch - when I was
+  using the installer with the load cemdb and load sample data options I
+  was getting maximum execution time exceeded and allowed memory size
+  exhausted errors. This patch adds those checks to the first page of
+  the installer.
+
+- php-syslog-ng-2.9.2a-r13-install-index-html.patch - an HTML tag wasn't
+  closed properly, this fixes it.
+
+- php-syslog-ng-2.9.2a-r13-suppress-warnings.patch - php-syslog-ng
+  prints a warning when there are database problems. mysql_pconnect and
+  mysql_connect print warnings too. The patch suppresses the warnings
+  that mysql_pconnect and mysql_connect spit out.
+
+**** IMPORTANT (really all of this is, it's why it's here...)***
+- Moved the html/scripts directory to ../ (so that it would not be web accessible)
+- Added Mysql.pm in scripts/ which resolves a bug in Net::MySql and MySql 5.x
+
+2.9.2a(r13)
+* Minor bugfixes
+- Fixed Logrotate.php bug
+- F. Leimbach - Add logic to remember the requested query throughout a login
+  Made a few changes to this (including allowing the same for the Tail function)
+- Added user guide (Word Doc)
+- Added check to see if config.php was filled in and redirect to install if not.
+- Enhancements made to dbgen.pl so that I could use it with cron.
+
+2.9.2a
+* Minor bugfixes
+- added htmlentities filter to $info in regularresult and tailresult since some messages contained odd characters in the CEMDB.
+- Changed setcookie function - it was doing some weird timeout stuff
+
+2.9.2
+* Uh, lot's of changes...I really should have updated this file and didn't -- shame on me.
+- I did add a lot of info to the readme though --- please be sure to read that.
+
+
+/*********************************************************************/
+Release notes for php-syslog-ng 2.9.1:
+I've taken the 2.8 version, fixed a few bugs/annoyances and added an install interface.
+To use the installer, just create an empty (writeable) config.php in the config/ directory and point
+your browser to http://yourserver/install
+
+I've also added a perl script to generate fake events located at scripts/dbgen.pl
+
+Added the Cisco Error Message Database (CEMDB)
+ - The CEMDB includes a MySQL table of all cisco errors available (~25k entries).
+ - It will automatically display more information about any Cisco-based event that comes in.
+ - Note that you must have javascript enabled for this to display.
+To enable this feature, your config file requires two entries:
+define('CEMDB', 'ON');
+define('CISCO_ERROR_TABLE', 'cemdb');
+These entries are created if you use the installer.
+
+I'm including the dumpfile for the CEMDB stuff - it can be found in install/sql/cemdb.sql
+Note that scripts/cemdb/* is not needed, it's there for future updates of the cemdb.
+All you need is the cemdb.sql file in the install directory.
+* You may want to GZIP this file to save space, I'm leaving it uncompressed to the installer can use it
+* Someone should write code to automatically uncompress and compress it as needed using the installer
+* (I may if I have time)
+
+- Clayton Dukes
+- Lot's-o-props to Michael Freeman for his help on the emd.pl script! (mfreeman451@gmail.com)
+/*********************************************************************/
+
+/*********************************************************************/
+* Release notes for php-syslog-ng 2.9.2:
+* NEW CONFIG - If you are not using the install utility provided, please note that the 
+* config/config.php file has changed -- see config.php.dist for an example.
+/*********************************************************************/
+- Lot's of minor fixes to 2.9.1
+- Added Graphing capability on the main page
+- To enable/disable Graphs, modify config.php
+ * Be sure to create a cache directory (jpcache is the default) and make it writeable by the web user.
+ * You may also want to add a cronjob to clean out the cache on a daily basis, like so:
+ @daily find /path/to/web/directory/html/jpcache -atime 1 -exec rm -f '{}' ';'
+ * This will delete files in that directory older then 1 day
+- Note: If you see an error about a missing font, the be sure to install the MS ttf's (verdana.ttf). In Ubuntu, just type "aptitude install msttcorefonts", other OS's, please read http://www.mail-archive.com/php-syslog-ng-support@lists.sourceforge.net/msg00126.html
+- Please read more about JPGraph here:
+ http://www.aditus.nu/jpgraph/pdf/jpgraphddda.pdf
+ Specifically, please note that it required GD libs to run!
+- The full JPGRAPH library is included with this distribution located under includes/jpgraph
+  It is the standard download - no modifications have been made to the source.
+
+
+- Changed the size of host tables in the database from varchar(32) to varchar(128) -- my customer has *really* long dns names and they were getting truncated.
+ To modify your installation, do the following from mysql:
+ * alter table logs modify host varchar(128) default NULL; 
+ * alter table search_cache modify value varchar(128) default NULL; 
+ Then, be sure to clear your search cache:
+ * delete from search_cache;
+
+- Changed default searches to include only yesterday to today. In other words, if you leave the date fields blank on the main page and click search, it will only search from yesterday until today, not everything. I did this because users at my client site would just click search without selecting anything just to see what it does and then complain that it was slow :-)
+ * To do this, I just modified regularresult.php and changed the following:
+ $date = get_input('date'); 
+ if (! $date) { 
+ $date = "yesterday"; 
+ }   
+ $date2 = get_input('date2'); 
+ if (! $date2) { 
+ $date = "today"; 
+ }   
+
+- A couple of people have asked how to create a password for the admin manually through the DB interface, here's how:
+ insert into users (username, pwhash) values ('admin', MD5("somepassword"));
+
+- Modified reloadcache.php and added:
+ $basePath = dirname( __FILE__ );
+ include_once "$basePath/../includes/common_funcs.php";
+ include_once "$basePath/../config/config.php";
+ So that I could run a cron job every 5 minutes to update the cache:
+ 0,5,10,15,20,25,30,35,40,45,50,55 * * * * php /www/php-syslog-ng/html/scripts/reloadcache.php >> /var/log/reloadcache.log
+
+- Modified dbgen.pl and made it more random -- including random hosts now.
+  * Also cleaned up the code some in it.
+
+- Modified scripts/syslog2mysql.sh so that it uses syslogadmin instead of syslogfeeder (I don't see a need for a separate syslogfeeder account)
+
+- Modified many of the files to use $basePath parameter instead of relative paths
+$basePath = dirname( __FILE__ );
+include_once "$basePath/../includes/common_funcs.php";
+include_once "$basePath/../config/config.php";
+
+- Modified META refresh tags on login and logout to use JS instead of META since it's faster and doesn't try to modify header information.
+
+- Overlib (javascript popup)
+You guys are more than welcome to make it better if you like.
+The javascript being used is from overLIB
+3.51(http://www.bosrup.com/web/overlib)
+Yes, I am aware there are later version available, but this version is
+much smaller and easier to use (but sacrifices more features).
+
+/*********************************************************************/
+/* The scripts directory contains some sample scripts that can be    */
+/* used to set up all the pieces needed by php-syslog-ng. Make sure  */
+/* you edit those scripts to match your environment before using     */
+/* them.                                                             */
+/*********************************************************************/
+
+Release notes for php-syslog-ng 2.7:
+This release only contains bug fixes. See the changelog for the complete list of changes.
+If you are using the merge table then you need to use MySQL 4.0.18 or later.
+
+-Claus
+
+# END
+
+2.8
+* Fixed a bug in logrotate.php (http://sourceforge.net/mailarchive/forum.php?thread_id=7674217&forum_id=34099).
+
+2.7
+* Fixed some more issues with undeclared variables 
+  (http://sourceforge.net/mailarchive/forum.php?thread_id=7433359&forum_id=34099
+  and 
+  http://sourceforge.net/mailarchive/forum.php?thread_id=7568291&forum_id=34099).
+- Fixed problem when passing arrays through POST or GET requests and running PHP without 
+  having magic quotes enabled (http://sourceforge.net/mailarchive/forum.php?thread_id=7568291&forum_id=34099).
+- Fixed a bug in the page counter at the bottom of the regularresult.php 
+  page. The count was incorrect when you moved past page five.
+- Changed the CREATE statement for the merge table in logrotate.php because it failed 
+  on some systems (it should now work on any version of MySQL 4.0.18 or later).
+- Changed logrotate.php to drop the temp table if it exists (it could 
+  possibly be created during a failed run and then the script would fail on all subsequent runs).
+
+2.6
+* More code clean-up and commenting.
+- Added an error message on failed login.
+- Did some work towards supporting other databases.
+- Option to reset other users' passwords.
+- Cache function for the search page.
+- Access controls. The access controls currently only affects various configuration specific items (add/deleting users, changing the access control settings etc).
+- Changed the database field on the search page so that you only have to pick a table if you have more than one table.
+- Fixed bug in get_logtables() (http://sourceforge.net/mailarchive/forum.php?thread_id=7433359&forum_id=34099).
+- Fixed issue with persistent MySQL connections. db_connect_syslog() now only uses mysql_pconnect() if it is available.
+- Fixed issue with undeclared variables. Some versions of PHP produce 
+  lots of errors/warnings/notices when variables are not declared before they are used.
+
+
+2.5.4
+* More code clean-up and commenting.
+- Added authentication. It can be enabled by setting REQUIRE_AUTH in config.php. 
+  Authentication also requires a new table and a create statement was added to the 
+  dbsetup.sql script. For authentication to work you also need to run the new GRANT 
+  statement for the regular user (GRANT UPDATE ON syslog.users TO sysloguser@localhost;). 
+  You should also add a user so that you are able to log in (you can add more users once you are logged in). 
+  INSERT INTO users (username, pwhash) VALUES('admin', 'd033e22ae348aeb5660fc2140aec35850c4da997'); 
+  will add a user 'admin' with password 'admin'.
+- Added a new field to the search page. If you have multiple tables with log data then 
+  you will get a dropdown where you can select what table to search. Unless you only 
+  have one table or have a merge table that covers all tables then you have to pick a 
+  table to work with before the rest of the form is displayed.
+- Changed the logrotate.php script to handle merge tables. This feature can be turned 
+  on and off using MERGELOGTABLE in config.php. When active then the logrotate.php will 
+  create a merge table covering all log tables whenever it's run. In order for this change 
+  to work you need to allow the admin user to have RELOAD priviliges. 
+  GRANT RELOAD ON *.* TO syslogadmin@localhost; will take care of that. 
+  You should not attempt to run the logrotate script more than once per day.
+- Changed the logrotate.php script to enable deleting outdated tables. This 
+  feature can be turned on and off using LOGROTATERETENTION in config.php. 
+  LOGROTATERETENTION specifies the number of days to keep old logs. Log tables with a 
+  datestamp older than today minus LOGROTATERETENTION will be deleted whenever logrotate.php is run.
+- Fixed a bug that caused the exclude option for PRIORITY to malfunction 
+  (http://sourceforge.net/mailarchive/forum.php?thread_id=7376135&forum_id=34099).
+- Fixed a bug that could result in collapsing identical messages from different hosts into one message.
+- Included a help page. If the database is unavailable then this page is the default page.
+- A few cosmetic changes to the user interface.
+- Implemented input validation for almost all input.
+
+2.5.3
+* Complete top-to-bottom clean-up of the code including large parts that were re-written.
+- Simplified much of the HTML ... but tried to stay true to the original look.
+- Changed the way the total number of results is calculated. My approach requires 
+  MySQL 4.0 or later. This way you can use a LIMIT statement and still get the total 
+  number of potential results if you had not used LIMIT. Also implemented an option to 
+  turn off this feature if using older versions of MySQL (no count will be displayed on 
+  older versions of MySQL).
+- Changed the list of result pages. It lists links to the 11 closest pages and adds 
+  FIRST, PREV, NEXT and LAST links. This only works correct when you have a total row 
+  count but limited functionality is offered for MySQL 3.x users (First, Prev and Next links).
+- The max-limit input variable is probably mostly useless now so it was removed.
+- Added sorting by column (seq, facility, severity, datetime).
+- Changed the way to and from times/dates are handled. A blank date field indicates any date. 
+  And if a date is entered and no time is specified then 00:00:00 is used for the FROM 
+  time and 23:59:59 is used for the TO time. Entering a time without a date results in 
+  the time being ignored.
+- 'now', 'today' and 'yesterday' are valid values for the date inputs on the search page (now and today are the same).
+- 'now' is valid value for the time inputs on the search page.
+- Did some prep work to allow an arbitrary number of inputs when searching for specific messages.
+- The hostname link on the result page (for both the regular result and the 
+  tail result) narrows down the search to only include that particular host.
+- The results in the tail script can be narrowed down using many of the same variables as the regular search result.
+- MySQL functions that include basic database error handling.
+- Added a button on the search page to go straight to the tail result page.
+- Added an option to collapse consecutive lines with identical messages into one line.
+- Included some sample scripts for setup etc (create database and database users, 
+  logrotate, syslog to mysql).
+# END

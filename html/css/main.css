@@ -1,0 +1,349 @@
+/* body sets the background for all pages */
+body {
+  font-size:12px;
+  font-family:Trebuchet MS;
+}
+.gridhead {
+  font-size:14px;
+  font-family:Trebuchet MS;
+}
+.gradient {
+  height: 100px;
+  padding: 4px;
+  background: url(../images/lz_kuler_grad.gif) 0% 0% repeat-x;
+  background-color: #FFFFFF;
+}
+/* wrapper is for the grid display on search results */
+.wrapper {
+  border:10px solid #246591;
+  padding:20px;
+  width:90%;
+  margin: 0 auto;
+}
+/* <!-- BEGIN Set style for full column (grid display) --> */
+.portlet { 
+    margin: 0 1em 1em 0; 
+}
+.portlet-header { margin: 0.3em; padding-bottom: 4px; padding-left: 0.2em; }
+.portlet-header .ui-icon { float: right; }
+.portlet-content { padding: 0.4em; }
+.ui-sortable-placeholder { border: 2px dotted red; visibility: visible !important; height: 100px !important; }
+.ui-sortable-placeholder * { visibility: hidden; }
+/* <!-- END Set style for sortable widgets --> */
+
+/* BEGIN Submit button position on main page */
+/* position is relative to the main page, column 2 */
+.submitButtons { 
+    position: relative; 
+    bottom: 0; 
+    left: 0;
+}
+/* END Submit button position on main page */
+
+/* BEGIN search filter input boxes */
+.rounded_gridfilter {
+    border: none;
+     padding: 2px;
+     width: 100px;
+     height: 19px;
+     border-radius: 3px;
+     -moz-border-radius: 3px;
+     -webkit-border-radius: 3px;
+}
+.rounded_textbox {
+    border: none;
+     padding: 2px;
+     height: 25px;
+     border-radius: 3px;
+     -moz-border-radius: 3px;
+     -webkit-border-radius: 3px;
+}
+.watermark {
+    color: #CCCCCC;
+    font-style: italic;
+}
+/* END search filter input boxes */
+/* BEGIN Time Picker */
+div.time-picker {
+    position: absolute;
+    height: 200px;
+    width:4em; /* needed for IE */
+    overflow: auto;
+    background: #fff;
+    border: 1px solid #000;
+    z-index: 99;
+ }
+ div.time-picker-12hours {
+     width:6em; /* needed for IE */
+ }
+
+ div.time-picker ul {
+     list-style-type: none;
+     margin: 0;
+     padding: 0;
+ }
+ div.time-picker li {
+     padding: 1px;
+     cursor: pointer;
+ }
+ div.time-picker li.selected {
+     background: #316AC5;
+     color: #fff;
+ }
+/* END Time Picker */
+
+/* BEGIN Mouse pointer for tab close events */
+.tab_delete:hover {
+      cursor: pointer;
+}
+.ui-tabs-disabled {
+        display: none; /* disabled tabs don't show up */
+}
+.ui-tabs .ui-tabs-hide {
+        position: absolute;
+            left: -10000px;
+}
+/* END Mouse pointer for tab close events */
+
+/* BEGIN Tab close options */
+#tabs { margin-top: 1em; }
+#tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+#add_tab { cursor: pointer; }
+/* END Tab close options */
+
+/* BEGIN Custom JGrowl options for box positioning */
+div.jGrowl div.jGrowl-notification, div.jGrowl div.jGrowl-closer {
+	background-color: 		#000;
+	opacity: 				.85;
+    -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+    filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+	zoom: 					1;
+	width: 					235px;
+	padding: 				10px;
+	margin-top: 			5px;
+	margin-bottom: 			5px;
+	font-family: 			Tahoma, Arial, Helvetica, sans-serif;
+	font-size: 				1em;
+	text-align: 			left;
+	display: 				none;
+	-moz-border-radius: 	5px;
+	-webkit-border-radius:	5px;
+    height: 40px;
+  }
+div.center div.jGrowl-notification, div.center div.jGrowl-closer {
+	width: 		    		535px;
+    height:                 1%;
+	margin-top:     		0px;
+	margin-bottom:  		0px;
+	padding: 		    	8px;
+	-moz-border-radius:	    5px;
+	-webkit-border-radius:	5px;
+ }
+body > div.jGrowl.center {
+     top:                0px;
+     left:               30%;
+}
+/* END Custom JGrowl options for box positioning */
+
+/* BEGIN AND/OR Slider */
+div#slide_wrapper {width: 85%; 
+    padding: 3px; 
+}
+/* END AND/OR Slider */
+
+/* BEGIN Did you know dialog */
+#opaque {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    z-index: 99;
+    display: none;
+    background-color: black;
+    filter: alpha(opacity=70);
+    opacity: 0.7;
+ }
+/* END Did you know dialog */
+/* BEGIN Typewriter style text (for 404 page) */
+#tw {
+    width : 400px;
+    height : 460px;
+    border : 1px solid #000;
+    background-color :#ccc;
+    padding : 5px;
+    font-family : "courier new",courier,monospace;
+    font-size : 18px;
+}
+/* END Typewriter style text (for 404 page) */
+/* BEGIN preformatted text */
+pre {
+    overflow-x: auto; /* Use horizontal scroller if needed; for Firefox 2, not needed in Firefox 3 */
+    white-space: pre-wrap; /* css-3 */
+    white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+    white-space: -pre-wrap; /* Opera 4-6 */
+    white-space: -o-pre-wrap; /* Opera 7 */
+    /* width: 99%; */
+    word-wrap: break-word; /* Internet Explorer 5.5+ */
+}
+pre.code
+    {
+        background-color:   #f0f0f0;
+        padding:            0.5em;
+        margin-left:        2em;
+        margin-right:       2em;
+    }
+/* END preformatted text */
+/* BEGIN codeblock */
+.codeblock {
+        padding: 10px 15px;
+        margin: 5px 0 15px;
+        border-left: 5px solid #666666;
+        background: #222222;
+        font: 1em/1.5 "Courier News", monospace;
+        color: #bbbbbb;
+        overflow : auto;
+}
+/* END codeblock */
+/* BEGIN Severity Levels */
+.sev7 {
+    background-color: 		#FFF;
+    opacity: 				.85;
+    -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+    filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+    zoom: 					1;
+    text-align: center;
+}
+.sev6 {
+     background-color: #80FF80;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+
+.sev5 {
+     background-color: #C5FFC5;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+
+.sev4 {
+     background-color: #FFFF80;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+
+.sev3 {
+     background-color: #ff8f00;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+
+.sev2 {
+     background-color: #ffa0a0;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+
+.sev1 {
+     background-color: #FFC0FF;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+
+.sev0 {
+     background-color: #ff0000;
+     opacity: 				.85;
+     -ms-filter: 			"progid:DXImageTransform.Microsoft.Alpha(Opacity=85)"; 
+     filter: 				progid:DXImageTransform.Microsoft.Alpha(Opacity=85); 
+     zoom: 					1;
+     text-align: center;
+}
+ /* END Severity Levels */
+
+/* BEGIN Severity Filters */
+.sev_filter { 
+    float: left; 
+    left: 20px;
+    margin: 0.2em; 
+    padding: 0em;
+}
+/* END Severity Filters */
+
+/* BEGIN Make helper icons look clickable */
+.ui-icon-disk { cursor: pointer; }
+.ui-icon-print { cursor: pointer; }
+.ui-icon-help { cursor: pointer; }
+.ui-icon-refresh { cursor: pointer; }
+/* END Make helper icons look clickable */
+
+pre {
+    overflow-x: auto; /* Use horizontal scroller if needed; for Firefox 2, not needed in Firefox 3 */
+    white-space: pre-wrap; /* css-3 */
+    white-space: -moz-pre-wrap !important; /* Mozilla, since 1999 */
+    white-space: -pre-wrap; /* Opera 4-6 */
+    white-space: -o-pre-wrap; /* Opera 7 */
+    /* width: 99%; */
+    word-wrap: break-word; /* Internet Explorer 5.5+ */
+}       
+/* BEGIN Hidden Dialogs */
+input.text { margin-bottom:12px; width:95%; padding: .4em; }
+fieldset { padding:0; border:0; margin-top:25px; }
+h1 { font-size: 1.2em; margin: .6em 0; }
+.ui-dialog .ui-state-error { padding: .3em; }
+.dialog_hide { display:none; clear:left; }
+tr.invisibleRow
+        {
+        display:none;
+        visibility:hidden;
+}
+/* END Hidden Dialogs */
+/* BEGIN Footer Bar */
+#footer {
+     position: absolute;
+     bottom: 8%; left: -3px;
+     z-index: 10;
+     padding:5px;
+     border:0px solid #CCCCCC;
+     text-align:center;
+     font-weight:bold;
+     width:99%;
+}
+/* END Footer Bar */
+/* BEGIN Search Parameter Text Box */
+.dottedred { 
+    border: 2px dotted red; 
+}
+.search_params { 
+     position: relative;
+     text-align:left;
+     font-size:10px;
+     font-family:Trebuchet MS;
+     font-weight:bold;
+}
+.hoverTable {
+     border-collapse: collapse;
+     width: 100%;
+}
+.ui-dialog-title { 
+      float:none !important; 
+      display: block; 
+      text-align: center; 
+  } 

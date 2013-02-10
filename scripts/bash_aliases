@@ -1,0 +1,48 @@
+# LogZilla helper tools
+#
+# I use this on most of the systems I manage, it may help you as well.
+# To use, just copy in your home directory as .bash_aliases_lz and call ". .bash_aliases_lz" from your .bashrc file.
+# Change to following to fit your install/preferences.
+export LZ='/var/www/logzilla'
+#export EDITOR='vim'
+export MY_ADMIN='root'
+
+# lz_seed_password() allows to remove password from bash_aliases
+export MY_ADMIN_PWD='use lz_seed_password to fill this'
+
+lz_seed_password() {
+    read -s -p "Please enter $MY_ADMIN MySQL password: " MY_ADMIN_PWD
+    echo
+}
+
+
+# OS Related
+alias df='df -h'
+alias diff='diff -Nur'
+alias dir='ls --color=auto --format=vertical'
+alias du='du -h'
+alias ll='ls --color -lh'
+alias ls='ls --color=auto'
+alias pa='ps -efwwwww | grep -v grep | grep $1'
+alias vi='vim'
+
+# MySQL Related
+alias mysql='mysql -u$MY_ADMIN -p$MY_ADMIN_PWD'
+alias mysqladmin='mysqladmin -u$MY_ADMIN -p$MY_ADMIN_PWD'
+alias mysqlcheck='mysqlcheck -u$MY_ADMIN -p$MY_ADMIN_PWD --auto-repair'
+alias mysqldump='mysqldump -u$MY_ADMIN -p$MY_ADMIN_PWD'
+alias mysqlreport='mysqlreport --user=$MY_ADMIN --password=$MY_ADMIN_PWD'
+alias mysqlshow='mysqldump -u$MY_ADMIN -p$MY_ADMIN_PWD'
+alias mytop='mytop -u$MY_ADMIN -p$MY_ADMIN_PWD'
+
+# LogZilla related
+alias mysqltuner='$LZ/scripts/tools/mysqltuner.pl --user $MY_ADMIN --pass $MY_ADMIN_PWD'
+alias summary='$LZ/scripts/tools/summary'
+alias lzupdate='(cd $LZ && sudo svn update --accept theirs-conflict && cd scripts && ./upgrade)'
+
+# Sphinx shortcuts
+alias myspx='mysql -h0 -P9306'
+alias spx_full='(cd $LZ/sphinx && ./indexer.sh full)'
+alias spx_delta='(cd $LZ/sphinx && ./indexer.sh delta)'
+alias spx_stop='(cd $LZ/sphinx && bin/searchd --stop)'
+alias spx_start='(cd $LZ/sphinx && bin/searchd)'

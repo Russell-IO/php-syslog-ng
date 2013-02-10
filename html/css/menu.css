@@ -1,0 +1,77 @@
+/* CSS Document */
+#menu, #menu ul {
+    list-style:none;
+    padding:0;
+    margin:0;
+}
+#menu li {
+    float:left;
+    position:relative;
+    line-height:2.5em;
+    width:10em;
+}
+#menu li ul {
+    position:absolute;
+    margin-top:0em;
+    margin-left:0em; /* for IE */
+    display:none;
+}
+#menu ul li ul {
+    margin-top:-2.7em;
+    margin-left:10em;
+}
+/* ******************************************************************* */
+/* SHOW SUBMENU  1 */
+#menu li:hover ul, #menu li.over ul {
+    display:block;
+}
+#menu li:hover ul ul, #menu li.over ul ul {
+    display:none;
+}
+/* SHOW SUBMENU  2 */
+#menu ul li:hover ul, #menu ul li.over ul {
+    display:none;
+}
+/* ******************************************************************* */
+/* STYLING UP THE LINKS */
+#menu a {
+    display:block;
+    border-right:1px solid #385F6A;
+    background:#385F6A;
+    color:#FFFFFF;
+    text-decoration:none;
+    padding:0 10px;
+}
+#menu a:hover {
+    background-color:#5798B4;
+    color:#fff;
+}
+#menu ul {
+    border-top:1px solid #fff;
+}
+#menu ul a {
+    border-right:none;
+    border-right:1px solid #fff;
+    border-bottom:1px solid #fff;
+    border-left:1px solid #fff;
+    background:#385F6A;
+}
+
+/* ******************************************************************* */
+
+#menu {
+    z-index:1;
+}
+#menu ul {
+    z-index:2;
+}
+#menu ul ul {
+    z-index:3;
+}
+
+/* ******************************************************************* */
+
+/* Fix IE. Hide from IE Mac \*/
+* html ul li { float: left; height: 1%; }
+* html ul li a { height: 1%; }
+/* End */

@@ -1,0 +1,12 @@
+php_flag register_globals off
+php_flag magic_quotes_runtime off
+php_flag display_errors on
+php_value error_reporting 999999999
+<Files ~ "license\.txt$">
+  Order allow,deny
+  Deny from all
+</Files>
+<Files ~ "config/config\.php$">
+  Order allow,deny
+  Deny from all
+</Files>

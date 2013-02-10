@@ -1,0 +1,86 @@
+#!/bin/bash
+hn=`hostname`
+apache_log="/var/log/apache2/error.log"
+apache_conf="/etc/apache2/sites-enabled/000-default"
+lz="/var/www/logzilla"
+ngconf="/etc/syslog-ng/syslog-ng.conf"
+phpini="/etc/php5/apache2/php.ini"
+
+if [[ $EUID -ne 0 ]]; then
+       echo "This script must be run as root - if you are using Ubuntu, try \"sudo $0\"" 1>&2
+          exit 1
+      fi
+
+#######################################
+# Prompt for a value
+#######################################
+f_ANSWER()
+{
+        printf "%s " "$1"
+        if [ "$2" != "" ] ; then
+                printf "[%s] " "$2"
+        fi 
+        if [ "${DEFAULT:-0}" -eq 0 ] ; then
+                read ANSWER
+        else
+                printf "%s\n" "$2"
+        fi
+        if [ "$ANSWER" = "" ] ; then
+                ANSWER="$2"
+        fi
+}
+
+echo "Collecting Support Information..."
+ifconfig -a > $hn.ifconfig.log
+$lz/scripts/tools/summary > $hn.summary.log
+
+if [ -e "$apache_log" ]; then
+    tail -20 /var/log/apache2/error.log > $hn.apache_error.log
+else
+    echo "Unable to locate your apache error log"
+    f_ANSWER "Where is your Apache Error log located?" "$apache_log"
+    apachelog=$ANSWER
+fi
+if [ -e "$ngconf" ]; then
+    cat $ngconf > $hn.syslog-ng.conf.log
+else
+    echo "Unable to locate your Syslog-ng config"
+    f_ANSWER "Where is your syslog-ng config located?" "$ngconf"
+    ngconf=$ANSWER
+    cat $ngconf > $hn.syslog-ng.conf.log
+fi
+if [ -e "$phpini" ]; then
+    cat $phpini > $hn.php.ini.log
+else
+    echo "Unable to locate your Syslog-ng config"
+    f_ANSWER "Where is your syslog-ng config located?" "$phpini"
+    phpini=$ANSWER
+    cat $phpini > $hn.php.ini.log
+fi
+e=`grep -i logzilla $apache_conf`
+if [ "$e" ]; then
+    cat $apache_conf > $hn.apache.conf.log
+else
+    echo "Unable to locate your Apache config"
+    f_ANSWER "Where is your Apache config for the LogZilla website located?" "$apache_conf"
+    apache_conf=$ANSWER
+    cat $apache_conf > $hn.apache.conf.log
+fi
+
+printf "`date \"+%Y-%m-%d %H:%M:%S\"`\ttest\t190\tCRON\tTest From LogZilla Support\n" | $lz/scripts/log_processor -v -d 2 -dd 1 > $hn.dbtest.log  2>&1 
+
+cat /var/www/logzilla/scripts/install.pl | grep -E "version\s+=" > $hn.lzver.log 2>&1
+
+tar czvf $hn.tgz $hn.*.log
+rm -f $hn.apache_error.log
+rm -f $hn.dbtest.log
+rm -f $hn.ifconfig.log
+rm -f $hn.summary.log
+rm -f $hn.lzver.log
+rm -f $hn.syslog-ng.conf.log
+rm -f $hn.php.ini.log
+rm -f $hn.apache.conf.log
+echo
+echo "Completed."
+echo "Please email $hn.tgz to support@logzilla.pro, or visit http://support.logzilla.pro an attach to your ticket online"
+

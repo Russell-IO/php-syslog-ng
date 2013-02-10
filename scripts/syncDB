@@ -1,0 +1,580 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use bigint;
+use Find::Lib qw(../lib);
+use LogZilla::DebugFilter;
+use Log::Fast;
+use FindBin;
+use LogZilla::Config;
+use Getopt::Long;
+use File::Basename;
+use Cwd qw(abs_path);
+use DBI;
+use DBD::mysql;
+my $ROOT_DIR = abs_path("$FindBin::Bin/..");
+use POSIX qw/strftime/;
+use Date::Simple ( 'date', 'today' );
+
+#FIXME - I had to add below for Perl 5.10 users.
+# on Perl 5.10, I would get the following when running:
+# perl -e"autoflush STDOUT, 1;"
+# Can't locate object method "autoflush" via package "IO::Handle" at -e line 1.
+use FileHandle;
+
+# Create default logger, will reconfigure it as soon as we read configuration from database
+my $log = Log::Fast->global();
+
+my (@runfuncs);
+my @functionlist = ( "countUpdate", "updateHosts", "tblSync", "cleanup_old_views", "cleanup_old_idx", "ss" );
+
+# Command line options
+my $options = {
+    debug    => 0,
+    verbose  => 0,
+    log_file => undef,    # will set default later based on settings in DB
+    config_file => "$ROOT_DIR/html/config/config.php",
+    help        => 0,
+};
+
+sub usage_and_exit {
+    my ($exit_code) = @_;
+
+    my $myname = $0;
+    $myname =~ s{.*/}{};    # leave just program name without path
+
+    # TODO sync this with getopt
+    print STDERR qq{
+This program is used to process incoming syslog messages from a file.
+Usage: $myname [-option -option] 
+    -h        : this (help) message
+    -d        : debug level (0-5) (0 = disabled [default])
+    -dr       : Dry Run (don't make any changes)
+    -v        : Also print results to STDERR
+    -l        : log file (defaults to dir set in DB settings)
+    -r        : Run only specified function(s) (used for debugging)
+    -f        : list available functions (for debug use)
+    -c        : config file (defaults to $options->{config_file})
+Example: $myname -l /var/log/foo.log -d 5 -c test/config.php -v
+};
+    exit($exit_code);
+}
+
+GetOptions(
+    'debug|d=i'       => \$options->{debug},
+    'dryrun|dr'       => \$options->{dryrun},
+    'help|h!'         => \$options->{help},
+    'verbose|v!'      => \$options->{verbose},
+    'log-file|l=s'    => \$options->{log_file},
+    'config-file|c=s' => \$options->{config_file},
+    'runfuncs|r=s'    => \@runfuncs,
+    'functionlist|f!' => \$options->{functionlist},
+) or usage_and_exit(1);    # got some invalid options
+
+if ( $options->{help} ) {
+    usage_and_exit(0);
+}
+
+# Read configuration from (PHP) config file
+my $cfg = LogZilla::Config->new( path => $options->{config_file} );
+
+# Connect to DB and setup error handler to log to $log and then exit with error
+my $dbh = connect_to_db();
+my $dbh_sphinx = DBI->connect( 'DBI:mysql::127.0.0.1:9306', 'root', ) || die "Could not connect to SphinxQL: $DBI::errstr";
+
+# Read settings from DB.
+my $settings = read_settings_from_db();
+my ($lzmajor, $lzminor) = split(/\./, $settings->{VERSION});
+
+# Reconfigure log to use log_file (as we finally got it from $settings), also
+# set proper level and output based on $options{verbose} and $options{debug}
+setup_log();
+
+if ( $options->{dryrun} ) {
+    $log->INFO("Dry Run Mode - No modifications will be made");
+}
+
+# Finally we are initialized, announce this to the world :-)
+$log->INFO("Program initialized successfully");
+
+my $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+
+# some useful vars
+
+my ( $results, $rc, $sth_syslog, $sth_sphinx, $sql );
+my bigint $count;
+
+# calcualating yesterday
+
+my ( $yWeekday, $yYear, $yMonth, $yDay ) = ( localtime( time - 24 * 60 * 60 ) )[ 6, 5, 4, 3 ];
+$yYear += 1900;
+$yMonth++;
+
+# use 2 digit months and days
+
+$yMonth = sprintf "%02d", $yMonth;
+$yDay   = sprintf "%02d", $yDay;
+
+# so the sphinx view of yesterdays data is
+my @DoW = qw( Sun Mon Tue Wed Fri Sat );
+
+my $sphinx_yesterday = 'idx_log_arch_day_' . $yYear . $yMonth . $yDay;
+
+if ( defined( $options->{functionlist} ) ) {
+    $log->INFO("Available Functions:");
+    foreach my $func (@functionlist) {
+        $log->INFO("$func");
+    }
+    exit;
+}
+if ( $#runfuncs < 0 ) {
+    countUpdate();
+    updateHosts();
+    tblSync( "mne",       "mne" );
+    tblSync( "snare_eid", "eid" );
+    tblSync( "programs",  "program" );
+    cleanup_old_views();
+    cleanup_old_idx();
+} else {
+    $log->INFO("Running specific functions only");
+
+    foreach my $func (@runfuncs) {
+        DEBUG( 1, "Starting $func" );
+        if ( $func eq "countUpdate" ) {
+            countUpdate();
+        }
+        elsif ( $func eq "updateHosts" ) {
+            updateHosts();
+        }
+        elsif ( $func eq "tblSync" ) {
+            tblSync( "mne",       "mne" );
+            tblSync( "snare_eid", "eid" );
+            tblSync( "programs",  "program" );
+        }
+        elsif ( $func eq "cleanup_old_views" ) {
+            cleanup_old_views();
+        }
+        elsif ( $func eq "cleanup_old_idx" ) {
+            cleanup_old_idx();
+        }
+        elsif ( $func eq "ss" ) {
+            ss();
+        }
+        DEBUG( 1, "Ending $func" );
+    }
+}
+
+# There should only be subs from here down
+
+sub tblSync {
+    my $db_tbl  = shift;
+    my $spx_tbl = shift;
+    $log->INFO("Syncing DB->$db_tbl to SP->$spx_tbl...");
+    $sql = "update $db_tbl set seen=0, hidden='true'";
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $dbh->do($sql) unless $options->{dryrun};
+
+    if ( $lzminor > 25 ) {
+        $sql = "SELECT $spx_tbl, sum(counter), max(lo) from distributed where match('\@dummy dummy') group by $spx_tbl limit 50000 OPTION max_matches=5000";
+    } else {
+        $sql = "SELECT $spx_tbl, sum(counter), max(lo) from distributed group by $spx_tbl limit 50000 OPTION max_matches=5000";
+    }
+    $sth_sphinx = $dbh_sphinx->prepare($sql);
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $sth_sphinx->execute();
+
+    if ( $sth_sphinx->rows > 0 ) {
+        $log->INFO( "Found %d ${spx_tbl}s", $sth_sphinx->rows );
+        while ( $results = $sth_sphinx->fetchrow_hashref ) {
+            $sql = "";
+            if ( $db_tbl eq "snare_eid" ) {
+                $sql = "update $db_tbl set seen='" . $results->{'sum(counter)'} . "', lastseen=GREATEST(lastseen,from_unixtime('" . $results->{'max(lo)'} . "')), hidden='false' where eid='" . $results->{"$spx_tbl"} . "'";
+            } else {
+                $sql = "update $db_tbl set seen='" . $results->{'sum(counter)'} . "', lastseen=GREATEST(lastseen,from_unixtime('" . $results->{'max(lo)'} . "')), hidden='false' where crc='" . $results->{"$spx_tbl"} . "'";
+            }
+            DEBUG( 1, "Executing SQL Statement: $sql" );
+            $dbh->do($sql) unless $options->{dryrun};
+        }
+    }
+}
+
+sub cleanup_old_views {
+
+    # cleanup old search results
+    $rc = 'drop view ';
+    $sql = "select table_name from information_schema.views where table_name like '%search_results'";
+    $sth_syslog = $dbh->prepare($sql);
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $sth_syslog->execute();
+    while ( $results = $sth_syslog->fetchrow_hashref ) {
+        $rc = $rc . $results->{'table_name'};
+        $rc = $rc . ",";
+    }
+    $rc = substr( $rc, 0, -1 );
+    if ( $rc !~ /^drop view$/ ) {
+        DEBUG( 1, "Executing SQL Statement: '$rc'" );
+        $dbh->do($rc) unless $options->{dryrun};
+    }
+}
+
+sub countUpdate {
+    $log->INFO("Collecting Counts");
+
+    # Preparing replacement for updateCache db procedure: Count all counters
+    # due to a bug in sphinxql when using sum you also need to use a group-by
+    if ( $lzminor > 25 ) {
+        $sql = "select severity, sum(counter) from distributed where match('\@dummy dummy') group by severity limit 50000 OPTION max_matches=5000";
+    } else {
+        $sql = "select severity, sum(counter) from distributed group by severity limit 50000 OPTION max_matches=5000";
+    }
+    DEBUG( 1, "Preparing SQL Statement: $sql" );
+    $sth_sphinx = $dbh_sphinx->prepare($sql);
+    $sth_sphinx->execute();
+    $count = 0;
+
+    # Print number of rows found
+    if ( $sth_sphinx->rows == 0 ) {
+        $log->INFO("No data found, do you have any log data?");
+        exit;
+    } else {
+        $log->INFO( "Verifying msg_sum cache", $sth_sphinx->rows );
+
+        # Loop if results found
+        while ( $results = $sth_sphinx->fetchrow_hashref ) {
+            $count = $count + $results->{'sum(counter)'};
+        }
+        $sth_syslog = $dbh->prepare('REPLACE INTO cache (name,value,updatetime) VALUES ("msg_sum",?,NOW());');
+        $sth_syslog->execute($count) unless $options->{dryrun};
+    }
+
+    # Check yesterday's counters
+    $sql = "show tables like '$sphinx_yesterday'";
+    DEBUG( 1, "Preparing SQL Statement: $sql" );
+    $sth_syslog = $dbh->prepare($sql);
+    $sth_syslog->execute();
+    if ( $sth_syslog->rows == 0 ) {
+        $log->INFO("No index for $sphinx_yesterday, skipping...");
+    } else {
+        if ( $lzminor > 25 ) {
+            $sql = "select severity, sum(counter) from $sphinx_yesterday where match('\@dummy dummy') group by severity";
+        } else {
+            $sql = "select severity, sum(counter) from $sphinx_yesterday group by severity";
+        }
+        DEBUG( 1, "Preparing SQL Statement: $sql" );
+        $sth_sphinx = $dbh_sphinx->prepare($sql);
+        $sth_sphinx->execute();
+        $count = 0;
+        while ( $results = $sth_sphinx->fetchrow_hashref ) {
+            $count = $count + $results->{'sum(counter)'};
+        }
+        if ( $count > 0 ) {
+            my $cache_yesterday_statistics = 'chart_mpd_' . $yYear . "-" . $yMonth . "-" . $yDay . "_" . $DoW[$yWeekday];
+            $log->INFO("Updating $cache_yesterday_statistics with $count");
+            $sql = "REPLACE INTO cache (name,value,updatetime) VALUES ('$cache_yesterday_statistics',$count,NOW())";
+            DEBUG( 1, "Executing SQL Statement: $sql" );
+            $dbh->do($sql) unless $options->{dryrun};
+        }
+    }
+}
+
+sub updateHosts {
+    my $table = shift;
+    $sql = "update hosts set seen=0, hidden='true'";
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $dbh->do($sql) unless $options->{dryrun};
+
+# Note that DB's with host count > 5000 may be a problem here. This needs testing.
+    if ( $lzminor > 25 ) {
+        $sql = "select host_crc, sum(counter), max(lo) from distributed where match('\@dummy dummy') group by host_crc limit 50000 OPTION max_matches=5000";
+    } else {
+        $sql = "select host_crc, sum(counter), max(lo) from distributed group by host_crc limit 50000 OPTION max_matches=5000";
+    }
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $dbh_sphinx->do($sql);
+    my $sth_sphinx = $dbh_sphinx->prepare($sql);
+    $sth_sphinx->execute();
+    if ( $sth_sphinx->rows > 0 ) {
+        $log->INFO( "Updating %d hosts...", $sth_sphinx->rows );
+        while ( my $results = $sth_sphinx->fetchrow_hashref ) {
+            $sql = ( "update hosts set seen=" . $results->{'sum(counter)'} . ", lastseen=GREATEST(lastseen,from_unixtime(" . $results->{'max(lo)'} . ")), hidden='false' where crc32(host)=" . $results->{'host_crc'} );
+            DEBUG( 1, "Executing SQL Statement: $sql" );
+            $dbh->do($sql) unless $options->{dryrun};
+        }
+        $log->INFO("Searching for dropped hosts...");
+        $sql = "SELECT value from settings WHERE name='RETENTION_DROPS_HOSTS'";
+        $sth_syslog = $dbh->prepare($sql);
+        DEBUG( 1, "Executing SQL Statement: $sql" );
+        $sth_syslog->execute();
+        if ( ( $sth_sphinx->rows ) < 0 ) {
+            $log->ERROR("RETENTION_DROPS_HOST not found in SETTINGS");
+        } else {
+            $results = $sth_syslog->fetchrow_hashref;
+            if ( ( $results->{'value'} ) == 1 ) {
+                $log->INFO("RETENTION_DROPS_HOST found. Dropping hidden hosts");
+                $sql = "delete from hosts where hidden='true'";
+                DEBUG( 1, "Executing SQL Statement: $sql" );
+                $dbh->do($sql) unless $options->{dryrun};
+            }
+        }
+    }
+}
+
+$sth_sphinx->finish if defined( ($sth_sphinx) );
+$sth_syslog->finish if defined( ($sth_syslog) );
+$dbh_sphinx->disconnect();
+$dbh->disconnect();
+
+# =================================================================================================
+# Helper functions
+# =================================================================================================
+
+sub humanBytes {
+    my $size = shift;
+    $size = $size * 1024; # incoming numbers are in kilobytes already
+    if ($size > 1099511627776)  #   TiB: 1024 GiB
+    {
+        return sprintf("%.2f TiB", $size / 1099511627776);
+    }
+    elsif ($size > 1073741824)  #   GiB: 1024 MiB
+    {
+        return sprintf("%.2f GiB", $size / 1073741824);
+    }
+    elsif ($size > 1048576)     #   MiB: 1024 KiB
+    {
+        return sprintf("%.2f MiB", $size / 1048576);
+    }
+    elsif ($size > 1024)        #   KiB: 1024 B
+    {
+        return sprintf("%.2f KiB", $size / 1024);
+    }
+    else                          #   bytes
+    {
+        return "$size byte" . ($size == 1 ? "" : "s");
+    }
+}
+sub humanReadable {
+    my $i = shift;
+    $i = $i * 1000;
+    if ( $i > 1000000000000 )    #   TB: 1000 GB
+    {
+        return sprintf( "%.0f T", $i / 1000000000000 );
+    }
+    elsif ( $i > 1073741824 )    #   GB: 1000 MB
+    {
+        return sprintf( "%.0f B", $i / 1000000000 );
+    }
+    elsif ( $i > 1048576 )       #   MB: 1000 KB
+    {
+        return sprintf( "%.0f M", $i / 1000000 );
+    }
+    elsif ( $i > 1000 )          #   KB: 1000 B
+    {
+        return sprintf( "%.0f K", $i / 1000 );
+    }
+    else                         #   bytes
+    {
+        return "$i byte" . ( $i == 1 ? "" : "s" );
+    }
+}
+
+sub commify {
+    my $text = reverse $_[0];
+    $text =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
+    return scalar reverse $text;
+}
+
+sub connect_to_db {
+    my $dbh = DBI->connect( $cfg->db_dsn, $cfg->db_user, $cfg->db_pass,
+        { HandleError => sub { $log->ERR( $_[0] ); exit(1) } } );
+    $dbh->{TraceLevel} = $options->{dbi_debug};
+    return $dbh;
+}
+
+# Create hash with pairs of name => value for every row read from settings table
+sub read_settings_from_db {
+    my %settings;
+    my $sth = $dbh->prepare("SELECT name, value FROM settings");
+    $sth->execute();
+    while ( my $r = $sth->fetchrow_arrayref ) {
+        $settings{ $r->[0] } = $r->[1];
+    }
+    $settings{SNARE} = 0 if $settings{SNARE} != 1;
+    return \%settings;
+}
+
+sub setup_log {
+    my $log_dir = $settings->{PATH_LOGS};
+
+    # Create log dir, and build log path if not provided by command line option
+    if ( !-d $log_dir ) {
+        mkdir( $log_dir, 0755 ) or croak("mkdir $log_dir: $!");
+    }
+    if ( !$options->{log_file} ) {
+        $options->{log_file} = $log_dir . "/" . basename( $0, '.pl' ) . '.log';
+    }
+
+    my $log_options = {};
+
+    # Set up output to file or both file and stderr
+    if ( $options->{verbose} ) {
+
+        # make multiplexer FH sending data both to file and STDERR
+        open( my $fh, '>>:tee', $options->{log_file}, \*STDERR )
+            or croak("$options->{log_file}: $!");
+        $fh->autoflush(1);
+        $log_options->{fh} = $fh;
+    }
+    else {
+        open( my $fh, '>>', $options->{log_file} ) or croak("$options->{log_file}: $!");
+        $log_options->{fh} = $fh;
+    }
+
+    # Setup extra information to put in every log line, depending on debug level
+    if ( $options->{debug} > 1 ) {
+        $log_options->{prefix} = "%D %T %S [%L] ";
+    }
+    else {
+        $log_options->{prefix} = "%D %T [%L] ";
+    }
+
+    $log_options->{level} = $options->{debug} > 0 ? 'DEBUG' : 'INFO';
+
+    $log->config($log_options);
+
+    $SIG{__WARN__} = sub {
+        my $msg = shift;
+        $msg =~ s/\n//;
+        $log->WARN($msg);
+    };
+
+    $log->INFO("Starting logging to $options->{log_file} with pid $$");
+}
+
+sub DEBUG {
+    my ( $level, @log_args ) = @_;
+    if ( $options->{debug} >= $level ) {
+        $log->DEBUG(@log_args);
+    }
+}
+
+sub cleanup_old_idx {
+    $log->INFO("Starting cleanup of old index files..");
+    my $basepath  = $settings->{PATH_BASE};
+    my $datadir   = "$basepath/sphinx/data";
+    my $retention = $settings->{RETENTION};
+    DEBUG( 1, "Index Data Path is $datadir" );
+    my ( $year, $mon, $day ) = ( localtime( time - ( 24 * $retention ) * 60 * 60 ) )[ 5, 4, 3 ];
+    $year += 1900;
+    $mon++;
+    $mon = sprintf "%02d", $mon;
+    $day = sprintf "%02d", $day;
+    my $old_idx = 'idx_log_arch_day_' . $year . $mon . $day;
+    DEBUG( 1, "DB Retention level set to $retention days" );
+    DEBUG( 1, "Oldest index is $old_idx" );
+    $log->INFO("Removing indexes older than $retention days");
+    DEBUG( 1, "Running system command: for file in `find $datadir/idx_log_arch_day_* -type f -mtime +$retention 2>/dev/null`; do echo \"removing \$file\"; rm \$file; done" );
+    system("for file in `find $datadir/idx_log_arch_day_* -type f -mtime +$retention 2>/dev/null`; do echo \"removing \$file\"; rm \$file; done") unless $options->{dryrun};
+
+    # cleanup old indexes from views
+    my @views;
+    $log->INFO("Pruning old archive views");
+    $sql = "select table_name from information_schema.views where table_name like 'log_arch_day_%'";
+    $sth_syslog = $dbh->prepare($sql);
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $sth_syslog->execute();
+    if ( $sth_syslog->rows > 0 ) {
+
+        while ( $results = $sth_syslog->fetchrow_hashref ) {
+            my ( undef, undef, undef, $yymmdd ) = split( /_/, $results->{'table_name'} );
+            my $date = today();
+            my $diff = today() - date($yymmdd);
+            DEBUG( 1, "Date = $date, Diff = $diff day(s)" );
+            if ( $diff > $retention ) {
+                $log->INFO("Adding view $results->{'table_name'} as drop candidate because it is older than $retention days");
+                push( @views, $results->{'table_name'} );
+            }
+        }
+        if (@views) {
+            foreach my $view (@views) {
+                $log->INFO("Dropping view: $view");
+                $sql        = "drop view $view";
+                $sth_syslog = $dbh->prepare($sql);
+                DEBUG( 1, "Executing SQL Statement: $sql" );
+                $sth_syslog->execute() unless $options->{dryrun};
+            }
+        } else {
+            $log->INFO("No old views found");
+        }
+    } else {
+        $log->INFO("No old views left for cleanup");
+    }
+}
+
+sub ss {
+    $log->INFO("-=Analyzing LogZilla Server Stats=-");
+    $sql        = "SELECT ROUND(AVG(count)) AS avg FROM events_per_second";
+    $sth_syslog = $dbh->prepare($sql);
+    DEBUG( 1, "Executing SQL Statement: $sql" );
+    $sth_syslog->execute();
+    $results = $sth_syslog->fetchrow_hashref;
+    if ( ( $results->{'avg'} ) > 1 ) {
+
+        #---
+        # Memory Stats
+        #---
+        $log->INFO("Memory Stats...");
+        my $spmem = `(cd $ROOT_DIR/sphinx/data && du -hsck *.spa | grep total | awk '{print \$1}')`;
+        chomp($spmem);
+        DEBUG(1, "spmem = %s", $spmem);
+        $log->INFO( "Found %s average eps", commify( $results->{'avg'} ) );
+        my $epd    = $results->{'avg'} * 60 * 60 * 24;
+        my $attrs = `cat $ROOT_DIR/sphinx/sphinx.conf | grep sql_attr | grep -v "#" | wc -l`;
+        my $needed = ( 2 + $attrs ) * $epd * 4 / 1000;
+        $log->INFO( "Expecting %s average EPD", commify($epd) );
+        my $total = `cat /proc/meminfo | grep MemTotal | awk '{print \$2}'`;
+        chomp($total);
+        my $free = `cat /proc/meminfo | grep MemFree | awk '{print \$2}'`;
+        chomp($free);
+        $log->INFO( "You have %s total system memory", humanBytes($total) );
+        $log->INFO( "You have %s free system memory",  humanBytes($free) );
+        $log->INFO( "At your current event rate, LogZilla will require about %s of Ram", humanBytes($needed) );
+        $log->INFO( "LogZilla is currently using %s of that %s total.", humanBytes($spmem), humanBytes($needed) );
+        my $remainder = $free - ( $needed - $spmem );
+
+        if ( ($remainder) < 0 ) {
+            $remainder = -$remainder;
+            $log->WARN("You don't have enough memory to support this logging level!");
+            $log->INFO( "You need at least %s more Ram", humanBytes($remainder) );
+        }
+
+        #---
+        # Disk Stats
+        #---
+        $log->INFO("Disk Stats...");
+        my $spdsk = `(cd $ROOT_DIR/sphinx/data && du -hsck *.spd *.spe *.sph *.spi *.spk *.spl *.spm *.spp *.sps | grep total | awk '{print \$1}')`;
+        chomp($spdsk);
+        my $du = $spdsk; # define du here in case the only disk usage is from today (server only up for one day)
+        $log->INFO( "LogZilla is currently using %s of TOTAL disk.", humanBytes($spdsk) );
+        $sql = "SELECT FROM_UNIXTIME(ts_from) as dt, ts_from AS ts FROM events_per_second limit 1";
+        $sth_syslog = $dbh->prepare($sql);
+        DEBUG( 1, "Executing SQL Statement: $sql" );
+        $sth_syslog->execute();
+        $results = $sth_syslog->fetchrow_hashref;
+
+        if ( ( $results->{'ts'} ) > 1 ) {
+            my $date = today();
+            my ( $ymd, undef ) = split( /\s+/, $results->{dt} );
+            my $diff = today() - date($ymd);
+            DEBUG(1, "YMD = %s, DB->dt = %s, DB->ts = %s, Date = %s, Diff = %s", $ymd, $results->{dt}, $results->{ts}, $date, $diff);
+            if ( $diff > 0 ) {
+                $du = sprintf("%d", ($spdsk / $diff));
+                DEBUG(1, "spdisk = %s, diff = %s, du = %s", $spdsk, $diff, $du);
+            } else {
+                $log->WARN("Results may not be accurate, please run this tool after your server has been running for > 2 days");
+            }
+            $log->INFO( "LogZilla will consume an estimated %s of disk per day", humanBytes($du) );
+        }
+    } else {
+        $log->INFO("Your server has not been running long enough or has not received any events yet.");
+    }
+}

@@ -1,0 +1,21 @@
+Step 1: Install Log::Syslog::Fast perl module:
+cpan Log::Syslog::Fast
+
+Step 2: Uncompress the sample logs:
+gzip -d syslog.sample.gz
+
+Step 3:
+run ./logreplay.pl -h for full help.
+
+Step 4: Profit!
+
+
+---
+Example runs include:
+
+#to insert lines from syslog.sample with default options
+./logreplay -f ./syslog.sample 
+
+#to insert 10 lines/second to the limit of 500 total inserts from syslog.sample
+./logreplay -f ./syslog.sample -t 0.1 -l 500
+

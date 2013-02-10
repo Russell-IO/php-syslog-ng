@@ -1,0 +1,449 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+
+# Generate given number of random (or not so random, if requested)
+# log entries, to be passed to the log_processor script
+
+use Getopt::Long;
+use Pod::Usage;
+use POSIX;
+
+my %OPT = (
+    n      => 100,
+    random => 1,
+    help   => 0,
+    hosts_num => 50,
+    progs_num => 50,
+    priors_num => (24*8),
+    msgs_num => 100,
+);
+
+usage() if ! GetOptions(
+    'number-of-events|n=i' => \$OPT{n},
+    'random|r!'            => \$OPT{random},
+    'help|h'               => \$OPT{help},
+    'hosts-num|hn=i'       => \$OPT{hosts_num},
+    'programs-num|pn=i'    => \$OPT{progs_num},
+    'priorities-num|rn=i'  => \$OPT{priors_num},
+    'messages-num|mn=i'    => \$OPT{msgs_num},
+) || $OPT{help};
+
+sub usage {
+    print STDERR "Usage: genlog [--norandom] [--number-of-events nnn]\n";
+    exit(1);
+}
+
+my @HOSTS = ( map { "host-$_" } 1 .. $OPT{hosts_num} );
+my @PROGRAMS = ( map { "prog-$_" } 1 .. $OPT{progs_num} );
+my @PRIORITIES = ( 0 .. ($OPT{priors_num} - 1) );
+
+my @MSGS;
+if( $OPT{random} ) {
+    @MSGS = <DATA>;
+    chop(@MSGS);
+    while( scalar(@MSGS) < $OPT{msgs_num} ) {
+        @MSGS = ( @MSGS, @MSGS );
+    }
+    @MSGS = splice( @MSGS, 0, $OPT{msgs_num} );
+}
+else {
+    @MSGS = ( map { "Message nr $_" } 1 .. $OPT{msgs_num} );
+}
+
+my $now = undef;
+my $ts = time();
+$|=1;
+for my $i ( 0 .. ( $OPT{n} - 1 ) ) {
+    if( ! $now || time() > $ts ) {
+        $now = POSIX::strftime( "%Y-%m-%d %H:%M:%S", localtime );
+    }
+    print join( "\t", 
+        $now, 
+        get_record(\@HOSTS, $i),
+        get_record(\@PRIORITIES, $i),
+        get_record(\@PROGRAMS, $i),
+        get_record(\@MSGS, $i),
+    ) . "\n";
+}
+
+sub get_record {
+    my( $array, $i ) = @_;
+    if( $OPT{random} ) {
+        return $array->[ rand(scalar(@{$array})) ];
+    }
+    else {
+        return $array->[ $i % scalar(@{$array}) ];
+    }
+}
+
+__END__
+Mar 31 04:14:36.356 CST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/20, changed state to down
+Mar 31 02:14:36.673 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to up
+Mar 31 05:14:36.863 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 06:14:36.972 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Gi7/6 and port Po1
+Mar 31 06:14:37 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/29, changed state to up
+Mar 31 06:14:38 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/29, changed state to up
+Mar 31 03:14:37.189 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/21, changed state to up
+Mar 31 06:14:37.319 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Gi7/6 and port Po1
+Mar 31 06:14:37.696 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (3) is UP
+Mar 31 06:14:37.717 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is UP
+Mar 31 03:14:37.897 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/10, changed state to up
+Mar 31 06:14:37.992 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 03:14:38.058 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/42, changed state to down
+Mar 31 04:14:38.361 CST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/20, changed state to up
+Mar 31 06:14:38.488 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to down
+Mar 31 03:14:38.528 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to down
+Mar 31 05:14:37.862 EST: %DOT11-7-AUTH_FAILED: Station 0000.1114.0a81 Authentication failed
+Mar 31 05:14:39.077 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/9, changed state to down
+Mar 31 06:14:39.487 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/18, changed state to down
+Mar 31 03:14:40 14.63.4.6 2009 Mar 31 05:14:32 EST -05:00 %PAGP-5-PORTTOSTP:Port 5/47 joined bridge port 5/47
+Mar 31 03:14:39.874 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/37, changed state to down
+Mar 31 05:14:39.971 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 05:14:40.978 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to down
+Mar 31 03:14:40.071 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/42, changed state to up
+Mar 31 06:14:40.129 EDT: %SEC-6-IPACCESSLOGP: list 167 denied tcp 14.4.46.117(63685) -> 14.66.42.34(8614), 1 packet 
+Mar 31 06:14:41.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 06:14:41.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 03:14:40.533 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to up
+Mar 31 05:14:41.082 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/9, changed state to up
+Mar 31 06:14:41.212 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from EXCHANGE to DOWN, Neighbor Down: Interface down or detached
+Mar 31 06:14:41.228 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (3) is DOWN (Interface not operational)
+Mar 31 06:14:42.212 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface Serial1/0, changed state to down
+Mar 31 06:14:42.216 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 06:14:41.245 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is DOWN (Received error notification from peer: Holddown time expired)
+Mar 31 06:14:42.065 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from EXCHANGE to DOWN, Neighbor Down: Dead timer expired
+Mar 31 02:14:41.347 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/23, changed state to down
+Mar 31 06:14:42.216 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:14:41.493 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/17, changed state to down
+Mar 31 05:14:41.665 EST: %DOT11-6-DISASSOC: Interface Dot11Radio0, Deauthenticating Station 0000.11ff.de16 Reason: Sending station has left the BSS
+Mar 31 03:14:41.879 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/37, changed state to up
+Mar 31 05:14:41.863 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 05:14:42.210 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 06:14:42.336 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (1) is UP
+Mar 31 06:14:42.652 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from LOADING to FULL, Loading Done
+Mar 31 06:14:43.208 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:14:43.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 06:14:43.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:14:42.357 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (20) is UP
+Mar 31 06:14:42.641 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from LOADING to FULL, Loading Done
+Mar 31 03:14:42.489 PDT: %LEAPCL-3-FAILED: AP Authentication to the WDS failed
+Mar 31 06:14:42.492 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/17, changed state to down
+Mar 31 03:14:42.699 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to down
+Mar 31 05:14:43.108 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to up
+Mar 31 05:14:44.115 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to up
+Mar 31 05:14:43.208 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to down
+Mar 31 06:14:43.212 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from FULL to DOWN, Neighbor Down: Interface down or detached
+Mar 31 06:14:43.236 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (1) is DOWN (Interface not operational)
+Mar 31 06:14:44.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:14:44.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 02:14:43.352 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/23, changed state to up
+Mar 31 06:14:43.601 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (20) is DOWN (TCP connection closed by peer)
+Mar 31 06:14:44.017 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from FULL to DOWN, Neighbor Down: Dead timer expired
+Mar 31 03:14:43.828 PDT: %DOT11-7-AUTH_FAILED: Station 0000.1155.000b Authentication failed
+Mar 31 06:14:43.759 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/24, changed state to down
+Mar 31 05:14:43.508 EST: %DOT11-7-AUTH_FAILED: Station 0000.11ee.7d67 Authentication failed
+Mar 31 06:14:44.105 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 06:14:44.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 06:14:45.212 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface Serial1/0, changed state to up
+Mar 31 05:14:44.368 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/2, changed state to down
+Mar 31 05:14:44.440 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/6, changed state to down
+Mar 31 06:14:44.539 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/17, changed state to up
+Mar 31 06:14:45.545 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/17, changed state to up
+Mar 31 03:14:44.704 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to up
+Mar 31 03:14:45.643 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to down
+Mar 31 06:14:44.757 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/24, changed state to down
+Mar 31 03:14:44.839 PDT: %C4K_REDUNDANCY-5-CONFIGSYNC: The calendar has been successfully synchronized to the standby supervisor
+Mar 31 05:14:45.255 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to up
+Mar 31 05:14:46.262 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to up
+Mar 31 05:14:45.367 CDT: %LINK-3-UPDOWN: Interface FastEthernet0/2, changed state to down
+Mar 31 05:14:45.438 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/6, changed state to down
+Mar 31 02:14:45.613 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/19, changed state to down
+Mar 31 06:14:45.869 EDT: %SEC-6-IPACCESSLOGP: list 167 denied tcp 14.4.46.117(63698) -> 14.66.42.34(8614), 1 packet 
+Mar 31 05:14:45.903 EST: %DOT11-7-AUTH_FAILED: Station 0000.1114.0a81 Authentication failed
+1/Host XX:E9:F7:82:23:19 is flapping between port 3/40 and port 2/28
+Mar 31 03:14:47 14.63.22.6 2009 Mar 31 04:37:03 CDT -05:00 %ETHC-5-PORTFROMSTP:Port 6/10 left bridge port 6/10
+Mar 31 06:14:46.315 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/18, changed state to up
+Mar 31 06:14:47.322 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to up
+Mar 31 05:14:46.426 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to down
+Mar 31 05:14:46.867 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 06:14:47.265 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/24, changed state to up
+Mar 31 06:14:48.272 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/24, changed state to up
+Mar 31 05:14:47.424 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/14, changed state to down
+Mar 31 05:14:47.422 CDT: %LINK-3-UPDOWN: Interface FastEthernet0/2, changed state to up
+Mar 31 05:14:48.429 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/2, changed state to up
+Mar 31 02:14:47.618 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/19, changed state to up
+Mar 31 03:14:47.648 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to up
+Mar 31 03:14:47.725 PDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.2214.5ad7 on port FastEthernet3/27.
+Mar 31 05:14:47.959 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 05:14:48.324 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/6, changed state to up
+Mar 31 05:14:49.331 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/6, changed state to up
+Mar 31 06:14:48.384 AST: %SEC-6-IPACCESSLOGRL: access-list logging rate-limited or missed 2 packets 
+Mar 31 05:14:48.957 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to down
+Mar 31 06:14:49.312 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (1) is UP
+Mar 31 06:14:49.708 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from LOADING to FULL, Loading Done
+Mar 31 06:14:49.334 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is UP
+Mar 31 06:14:49.698 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from LOADING to FULL, Loading Done
+Mar 31 04:14:49.461 MDT: %DOT11-7-AUTH_FAILED: Station 0000.1122.f0c1 Authentication failed
+Mar 31 03:14:49.890 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to down
+Mar 31 04:14:49.897 MDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/36, changed state to down
+Mar 31 05:14:49.939 CDT: %SEC-6-IPACCESSLOGP: list Broadband denied udp 14.108.71.158(7040) -> 14.232.183.117(59339), 1 packet 
+Mar 31 06:14:50.021 EDT: %SEC-6-IPACCESSLOGP: list 167 denied udp 14.4.46.117(32921) -> 14.66.42.33(161), 1 packet 
+Mar 31 05:14:50.454 CDT: %IPC-5-WATERMARK: 6001 messages pending in rcv for the port Card2/1:Request(2120000.5) seat 2120000
+Mar 31 05:14:50.514 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to down
+Mar 31 05:14:50.055 CDT: %DOT11-7-AUTH_FAILED: Station 0000.2214.06a6 Authentication failed
+Mar 31 03:14:51.181 PDT: %DOT11-7-AUTH_FAILED: Station 0000.11cc.cc33 Authentication failed
+Mar 31 03:14:51.189 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/19, changed state to down
+Mar 31 06:14:51.412 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 05:14:51.512 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/18, changed state to down
+Mar 31 05:14:51.851 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to up
+Mar 31 05:14:52.858 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to up
+Mar 31 03:14:51.895 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to up
+Mar 31 04:14:51.902 MDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/36, changed state to up
+Mar 31 02:14:52.091 PST: %DOT11-6-ASSOC: Interface Dot11Radio0, Station   0000.11ff.de18 Associated KEY_MGMT[WPA PSK]
+Mar 31 06:14:53.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 06:14:53.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:14:52.416 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 02:14:52.608 PST: %C4K_IOSINTF-5-GBICREMOVED: Slot= 3 Port= 6: GBIC has been removed
+Mar 31 02:14:52.608 PST: %C4K_IOSINTF-5-GBICINSERTED: Slot= 3 Port= 6:  GBIC has been inserted
+Mar 31 04:14:52.718 MDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/5, changed state to down
+Mar 31 05:14:52.863 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 05:14:53.009 EST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/7, changed state to down
+Mar 31 06:14:53.027 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to down
+Mar 31 04:14:53.156 CST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to down
+Mar 31 05:14:53.011 EST: %DOT11-7-AUTH_FAILED: Station 0000.1114.0a81 Authentication failed
+Mar 31 03:14:53.194 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/19, changed state to up
+Mar 31 06:14:53.212 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from FULL to DOWN, Neighbor Down: Interface down or detached
+Mar 31 06:14:53.236 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (1) is DOWN (Interface not operational)
+Mar 31 06:14:54.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 06:14:54.212 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 05:14:53.517 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/18, changed state to up
+Mar 31 05:14:54.523 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to up
+Mar 31 02:14:53.259 PST: %DOT11-7-AUTH_FAILED: Station 0000.11cc.ccea Authentication failed
+Mar 31 06:14:53.602 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is DOWN (TCP connection closed by peer)
+Mar 31 06:14:54.018 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from FULL to DOWN, Neighbor Down: Dead timer expired
+Mar 31 03:14:53.650 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/41, changed state to down
+Mar 31 02:14:53.662 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to down
+Mar 31 04:14:53.716 MDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/5, changed state to down
+Mar 31 05:14:54.007 EST: %LINK-3-UPDOWN: Interface FastEthernet1/0/7, changed state to down
+Mar 31 06:14:54.026 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/14, changed state to down
+Mar 31 05:14:54.294 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/14, changed state to up
+Mar 31 05:14:55.301 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to up
+Mar 31 03:14:55 14.63.81.6 2009 Mar 31 06:14:54 EDT -04:00 %PAGP-5-PORTFROMSTP:Port 5/46 left bridge port 5/46
+Mar 31 02:14:54.608 PST: %C4K_IOSINTF-5-GBICREMOVED: Slot= 3 Port= 6: GBIC has been removed
+Mar 31 02:14:54.608 PST: %C4K_IOSINTF-5-GBICINSERTED: Slot= 3 Port= 6:  GBIC has been inserted
+Mar 31 04:14:55.161 CST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to up
+Mar 31 05:14:54.456 EST: %DOT11-7-AUTH_FAILED: Station 0000.11cc.cc30 Authentication failed
+Mar 31 06:14:55.421 EDT: %SEC-6-IPACCESSLOGRL: access-list logging rate-limited or missed 5 packets 
+Mar 31 06:14:55.505 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 03:14:55.654 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/41, changed state to up
+Mar 31 02:14:55.667 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to up
+Mar 31 05:14:55.830 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/7, changed state to down
+Mar 31 04:14:55.930 MDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/5, changed state to up
+Mar 31 04:14:56.937 MDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/5, changed state to up
+Mar 31 03:14:56.237 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to down
+Mar 31 03:14:56.315 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 03:14:56.507 PDT: %DOT11-7-AUTH_FAILED: Station 0000.2244.9fac Authentication failed
+Mar 31 05:14:34.121 CDT: %DOT11-6-ASSOC: Interface Dot11Radio0, Station TNCCCHAT-DEAVES 0000.11bb.777b Associated KEY_MGMT[NONE]
+Mar 31 05:14:56.828 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/7, changed state to down
+Mar 31 03:14:57.308 PDT: %LEAPCL-3-FAILED: AP Authentication to the WDS failed
+Mar 31 03:14:57.313 PDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to down
+Mar 31 02:14:57.539 PST: %DOT11-6-DISASSOC: Interface Dot11Radio0, Deauthenticating Station 0000.11ff.de18 Reason: Sending station has left the BSS
+Mar 31 05:14:57.864 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 03:14:58.242 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to up
+Mar 31 06:14:58.514 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Gi7/6 and port Po1
+Mar 31 06:14:58.712 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (3) is UP
+Mar 31 06:14:59.116 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from LOADING to FULL, Loading Done
+Mar 31 06:14:58.734 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is UP
+Mar 31 06:14:59.106 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from LOADING to FULL, Loading Done
+Mar 31 05:14:59.085 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/7, changed state to up
+Mar 31 05:15:00.091 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/7, changed state to up
+Mar 31 03:14:59.318 PDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/13, changed state to up
+Mar 31 03:15:00.325 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to up
+Mar 31 03:15:00 14.63.36.7 2009 Mar 31 06:15:00 EDT -04:00 %PAGP-5-PORTFROMSTP:Port 6/21 left bridge port 6/21
+Mar 31 06:15:00.267 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/14, changed state to up
+Mar 31 06:15:01.274 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to up
+Mar 31 05:15:00.137 EST: %DOT11-7-AUTH_FAILED: Station 0000.1114.0a81 Authentication failed
+Mar 31 03:15:00.557 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/24, changed state to down
+Mar 31 02:15:00.573 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/10, changed state to down
+Mar 31 03:15:00.638 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/16, changed state to down
+Mar 31 06:15:00.614 AST: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Gi7/5 and port Po1
+Mar 31 05:15:00.752 EST: %LINK-3-UPDOWN: Interface FastEthernet1/0/7, changed state to up
+Mar 31 05:15:01.758 EST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/7, changed state to up
+Mar 31 06:15:02.208 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:15:02.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 06:15:02.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:15:14.473 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/34, changed state to down
+Mar 31 05:15:01.480 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/6, changed state to down
+Mar 31 05:15:01.647 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1166.d40d on port GigabitEthernet9/30.
+Mar 31 05:15:01.237 EST: %DOT11-7-AUTH_FAILED: Station 0000.11ff.cda2 Authentication failed
+Mar 31 06:15:01.899 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface Serial1/0:4, changed state to down
+Mar 31 06:15:01.899 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from FULL to DOWN, Neighbor Down: Interface down or detached
+Mar 31 06:15:01.907 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is DOWN (Interface not operational)
+Mar 31 03:15:02.115 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/11, changed state to down
+Mar 31 05:15:02.153 35: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/3, changed state to down
+Mar 31 06:15:02.212 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from FULL to DOWN, Neighbor Down: Interface down or detached
+Mar 31 06:15:02.228 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (3) is DOWN (Interface not operational)
+Mar 31 06:15:03.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:15:03.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 02:15:02.353 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to down
+Mar 31 05:15:02.506 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/26, changed state to down
+Mar 31 03:15:02.562 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/24, changed state to up
+Mar 31 02:15:02.578 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/10, changed state to up
+Mar 31 05:15:02.594 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 03:15:02.643 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/16, changed state to up
+Mar 31 05:15:02.864 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 05:15:03.151 35: %LINK-3-UPDOWN: Interface FastEthernet0/3, changed state to down
+1/Host XX:E9:F7:82:23:19 is flapping between port 3/40 and port 2/28
+Mar 31 04:15:03.238 EDT: %DOT11-7-AUTH_FAILED: Station 0000.11ff.cda2 Authentication failed
+Mar 31 06:15:03.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 06:15:13.478 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/34, changed state to up
+Mar 31 02:15:03.446 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/3, changed state to down
+Mar 31 05:15:03.493 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/6, changed state to up
+Mar 31 05:15:03.504 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/26, changed state to down
+Mar 31 06:15:03.531 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/11, changed state to down
+Mar 31 05:15:04.179 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/10, changed state to down
+Mar 31 06:15:04.247 EDT: %DOT11-7-AUTH_FAILED: Station 0000.2214.d117 Authentication failed
+Mar 31 02:15:04.358 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to up
+Mar 31 04:15:04.524 MDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/26, changed state to down
+Mar 31 06:15:04.530 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/11, changed state to down
+Mar 31 05:15:04.599 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to up
+Mar 31 03:15:04.841 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/12, changed state to down
+Mar 31 03:15:05.168 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/11, changed state to up
+Mar 31 05:15:05.177 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/10, changed state to down
+Mar 31 05:15:05.290 35: %LINK-3-UPDOWN: Interface FastEthernet0/3, changed state to up
+Mar 31 05:15:06.297 35: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/3, changed state to up
+Mar 31 06:15:05.376 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to down
+Mar 31 06:15:06.257 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/17, changed state to down
+Mar 31 02:15:05.450 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/3, changed state to up
+Mar 31 04:15:05.523 MDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/26, changed state to down
+Mar 31 06:15:05.532 AST: %SEC-6-IPACCESSLOGP: list Inbound denied udp 14.3.30.55(138) -> 14.127.30.255(138), 1 packet 
+Mar 31 05:15:05.668 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/26, changed state to up
+Mar 31 05:15:06.675 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/26, changed state to up
+Mar 31 03:15:05.775 PDT: %LEAPCL-3-FAILED: AP Authentication to the WDS failed
+Mar 31 03:15:06.015 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/43, changed state to down
+Mar 31 03:15:07.022 PDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/43, changed state to down
+Mar 31 06:15:07.208 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:15:07.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 06:15:06.375 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/18, changed state to down
+Mar 31 06:15:06.928 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/2, changed state to down
+Mar 31 06:15:07.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:15:08.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:15:08.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:15:08.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 06:15:07.321 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Gi7/6 and port Po1
+Mar 31 05:15:07.350 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/10, changed state to up
+Mar 31 05:15:08.357 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/10, changed state to up
+Mar 31 05:15:07.224 EST: %DOT11-7-AUTH_FAILED: Station 0000.1114.0a81 Authentication failed
+Mar 31 06:15:07.751 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/11, changed state to up
+Mar 31 06:15:08.757 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/11, changed state to up
+Mar 31 06:15:09.126 EDT: %IPC-5-WATERMARK: 2789 messages pending in xmt for the port Primary RFS Server Port(10000.B) seat 10000
+Mar 31 03:15:07.894 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/12, changed state to up
+Mar 31 05:15:07.864 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 06:15:07.926 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/2, changed state to down
+Mar 31 06:15:07.989 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 06:15:08.262 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/17, changed state to up
+Mar 31 02:15:08.182 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to down
+Mar 31 05:15:08.226 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/6, changed state to down
+Mar 31 04:15:08.749 CST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/9, changed state to down
+Mar 31 06:15:09.051 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/18, changed state to up
+Mar 31 06:15:10.057 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to up
+Mar 31 06:15:09.143 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/24, changed state to down
+Mar 31 02:15:09.181 PST: %LINK-3-UPDOWN: Interface FastEthernet1/0/15, changed state to down
+Mar 31 05:15:09.224 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/6, changed state to down
+2w4d: %SYS-4-CONFIG_RESOLVE_FAILURE: System config parse from (tftp://14.255.255.255/njpan1nas0104153102-confg) failed
+Mar 31 03:15:09.840 PDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/43, changed state to up
+Mar 31 03:15:10.847 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/43, changed state to up
+Mar 31 06:15:10.015 EDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/2, changed state to up
+Mar 31 06:15:14.022 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/2, changed state to up
+Mar 31 03:15:11 14.63.1.14 2009 Mar 31 03:15:09 PDT -07:00 %PAGP-5-PORTFROMSTP:Port 5/42 left bridge port 5/42
+Mar 31 04:15:09.798 CST: %DOT11-7-AUTH_FAILED: Station 0000.2233.7a5d Authentication failed
+Mar 31 03:15:10.495 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/21, changed state to down
+*Apr 27 09:33:09.937 PDT: %LEAPCL-3-FAILED: AP Authentication to the WDS failed
+Mar 31 04:15:10.754 CST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/9, changed state to up
+Mar 31 03:15:12 14.63.1.14 2009 Mar 31 03:15:10 PDT -07:00 %PAGP-5-PORTTOSTP:Port 5/42 joined bridge port 5/42
+Mar 31 06:15:14.148 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/24, changed state to up
+Mar 31 02:15:14.194 PST: %LINK-3-UPDOWN: Interface FastEthernet1/0/15, changed state to up
+Mar 31 02:15:12.201 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to up
+Mar 31 06:15:12.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 05:15:14.271 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/6, changed state to up
+Mar 31 05:15:12.278 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/6, changed state to up
+Mar 31 03:15:12 14.63.81.6 2009 Mar 31 06:15:11 EDT -04:00 %PAGP-5-PORTTOSTP:Port 5/46 joined bridge port 5/46
+Mar 31 06:15:14.900 EDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface Serial1/0:4, changed state to up
+Mar 31 04:15:12.141 MDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/26, changed state to up
+Mar 31 04:15:13.148 MDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/26, changed state to up
+Mar 31 05:15:12.205 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/9, changed state to down
+Mar 31 05:15:13.211 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/9, changed state to down
+Mar 31 06:15:12.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:15:13.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 06:15:13.212 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:15:12.262 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Gi7/6 and port Po1
+Mar 31 04:15:12.316 CST: %DOT11-7-AUTH_FAILED: Station 0000.2233.7a5c Authentication failed
+Mar 31 06:15:12.286 EDT: %SEC-6-IPACCESSLOGP: list 167 denied udp 14.67.43.139(123) -> 14.66.43.35(123), 4 packets 
+Mar 31 06:15:12.286 EDT: %SEC-6-IPACCESSLOGP: list 167 denied udp 14.67.43.142(123) -> 14.66.43.35(123), 4 packets 
+Mar 31 03:15:13 14.63.70.6 2009 Mar 31 06:15:11 EDT -04:00 %PAGP-5-PORTFROMSTP:Port 2/24 left bridge port 2/24
+Mar 31 03:15:12.500 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/21, changed state to up
+Mar 31 03:15:12.552 PDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.2214.5ad6 on port FastEthernet4/4.
+Mar 31 03:15:12.569 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/38, changed state to down
+Mar 31 05:15:12.864 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 05:15:12.962 CDT: %DOT11-6-ASSOC: Interface Dot11Radio0, Station   0000.11ee.c235 Associated KEY_MGMT[NONE]
+Mar 31 03:15:13 14.63.22.6 2009 Mar 31 04:37:30 CDT -05:00 %ETHC-5-PORTTOSTP:Port 6/10 joined bridge port 6/10
+Mar 31 03:15:13.051 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/41, changed state to down
+Mar 31 05:15:13.037 17: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/19, changed state to down
+Mar 31 06:15:13.336 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (1) is UP
+Mar 31 06:15:13.804 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from LOADING to FULL, Loading Done
+Mar 31 06:15:13.356 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is UP
+Mar 31 06:15:13.796 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from LOADING to FULL, Loading Done
+Mar 31 03:15:13.431 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 06:15:13.565 AST: %DOT11-7-AUTH_FAILED: Station 0000.2244.9fac Authentication failed
+Mar 31 06:15:01.865 EDT: %SEC-6-IPACCESSLOGP: list Outbound denied tcp 14.41.103.10(4877) -> 14.4.1.111(80), 2 packets 
+Mar 31 03:15:14.049 PDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/41, changed state to down
+Mar 31 05:15:14.035 17: %LINK-3-UPDOWN: Interface FastEthernet0/19, changed state to down
+Mar 31 06:15:14.103 EDT: %C4K_EBM-4-HOSTFLAPPING: Host XX:E9:F7:82:23:19 in vlan 101 is flapping between port Po1 and port Gi7/6
+Mar 31 03:15:14.308 PDT: %DOT11-7-AUTH_FAILED: Station 0000.1155.000b Authentication failed
+Mar 31 03:15:14.582 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/38, changed state to up
+Mar 31 05:15:14.360 EST: %DOT11-7-AUTH_FAILED: Station 0000.1114.0a81 Authentication failed
+Mar 31 05:15:15.258 CDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/9, changed state to up
+Mar 31 05:15:16.265 CDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/9, changed state to up
+Mar 31 03:15:15.444 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to up
+Mar 31 03:15:15.459 MST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to down
+Mar 31 03:15:15.724 PDT: %SEC-6-IPACCESSLOGP: list Inbound denied udp 14.89.169.10(138) -> 14.89.169.63(138), 1 packet 
+Mar 31 05:15:15.887 CDT: %SEC-6-IPACCESSLOGP: list Broadband denied tcp 14.44.74.178(6868) -> 14.231.167.92(47432), 1 packet 
+Mar 31 06:15:15.934 EDT: %DOT11-7-AUTH_FAILED: Station 0000.2244.9fad Authentication failed
+Mar 31 05:15:16.174 17: %LINK-3-UPDOWN: Interface FastEthernet0/19, changed state to up
+Mar 31 05:15:17.181 17: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/19, changed state to up
+Mar 31 03:15:17 14.63.36.7 2009 Mar 31 06:15:17 EDT -04:00 %PAGP-5-PORTTOSTP:Port 6/21 joined bridge port 6/21
+Mar 31 03:15:16.689 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/41, changed state to down
+Mar 31 03:15:17.228 PDT: %DOT11-7-AUTH_FAILED: Station 0000.2244.9faa Authentication failed
+1/Host XX:E9:F7:82:23:19 is flapping between port 2/28 and port 3/40
+Mar 31 06:15:18.208 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:15:18.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to down
+Mar 31 06:15:18.212 EDT: %ENTITY_ALARM-6-INFO: ASSERT MAJOR Se1/0 Physical Port Link Down 
+Mar 31 03:15:17.435 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to down
+Mar 31 03:15:17.464 MST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/14, changed state to up
+Mar 31 05:15:17.865 CDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.1144.4f5c on port GigabitEthernet8/2.
+Mar 31 03:15:18.034 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/37, changed state to down
+Mar 31 02:15:17.797 PST: %DOT11-7-AUTH_FAILED: Station 0000.2233.7a91 Authentication failed
+Mar 31 06:15:18.147 EDT: %DOT11-7-AUTH_FAILED: Station 0000.11cc.cca6 Authentication failed
+Mar 31 06:15:18.212 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.162.0.253 on Serial1/0 from FULL to DOWN, Neighbor Down: Interface down or detached
+Mar 31 06:15:18.240 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.162.0.253:0 (1) is DOWN (Interface not operational)
+Mar 31 06:15:19.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Receiver has remote alarm 
+Mar 31 06:15:19.208 EDT: %ENTITY_ALARM-6-INFO: CLEAR MAJOR Se1/0 Physical Port Link Down 
+Mar 31 06:15:18.600 EDT: %LDP-5-NBRCHG: LDP Neighbor 14.163.64.82:0 (5) is DOWN (TCP connection closed by peer)
+Mar 31 06:15:19.048 EDT: %OSPF-5-ADJCHG: Process 62, Nbr 14.163.64.82 on Serial1/0:4 from FULL to DOWN, Neighbor Down: Dead timer expired
+Mar 31 03:15:18.694 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/41, changed state to up
+Mar 31 06:15:18.765 EDT: %SEC-6-IPACCESSLOGP: list 167 denied tcp 14.4.46.117(63760) -> 14.66.42.34(22333), 1 packet 
+Mar 31 05:15:18.880 68: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/5, changed state to down
+Mar 31 03:15:19.232 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/15, changed state to down
+Mar 31 06:15:19.212 EDT: %LINK-3-UPDOWN: Interface Serial1/0, changed state to up
+Mar 31 03:15:19.440 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/18, changed state to up
+Mar 31 05:15:19.602 35: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/3, changed state to down
+Mar 31 05:15:19.878 68: %LINK-3-UPDOWN: Interface FastEthernet0/5, changed state to down
+Mar 31 03:15:20.013 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/13, changed state to down
+Mar 31 03:15:20.039 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/37, changed state to up
+Mar 31 02:15:20.044 PST: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/8, changed state to down
+*Apr 16 10:53:41.886 41: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/7, changed state to down
+Mar 31 06:15:20.244 EDT: %DOT11-7-AUTH_FAILED: Station 0000.2214.06f6 Authentication failed
+Mar 31 03:15:20.684 PDT: %LINK-3-UPDOWN: Interface FastEthernet1/0/41, changed state to up
+Mar 31 03:15:21.691 PDT: %LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet1/0/41, changed state to up
+Mar 31 03:15:20.865 PDT: %PORT_SECURITY-2-PSECURE_VIOLATION: Security violation occurred, caused by MAC address 0000.2214.5ad7 on port FastEthernet3/27.

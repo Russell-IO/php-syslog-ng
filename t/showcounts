@@ -1,0 +1,235 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Find::Lib qw(../lib);
+use LogZilla::DebugFilter;
+use Log::Fast;
+use FindBin;
+use LogZilla::Config;
+use Getopt::Long;
+use File::Basename;
+use Cwd qw(abs_path);
+use DBI;
+use DBD::mysql;
+my $ROOT_DIR = abs_path("$FindBin::Bin/..");
+use POSIX qw/strftime/;
+# Create default logger, will reconfigure it as soon as we read configuration from database
+my $log = Log::Fast->global();
+
+# Command line options
+my $options = {
+    debug => 0,
+    verbose => 0,
+    log_file => undef, # will set default later based on settings in DB
+    config_file => "$ROOT_DIR/html/config/config.php",
+    help => 0,
+};
+
+sub usage_and_exit {
+    my( $exit_code ) = @_;
+
+    my $myname = $0;
+    $myname =~ s{.*/}{}; # leave just program name without path
+
+    # TODO sync this with getopt
+    print STDERR qq{
+This program is used to process incoming syslog messages from a file.
+Usage: $myname [-option -option] 
+    -h        : this (help) message
+    -d        : debug level (0-5) (0 = disabled [default])
+    -v        : Also print results to STDERR
+    -l        : log file (defaults to dir set in DB settings)
+    -c        : config file (defaults to $options->{config_file})
+Example: $myname -l /var/log/foo.log -d 5 -c test/config.php -v
+};
+    exit($exit_code);
+}
+
+GetOptions(
+    'debug|d=i'            => \$options->{debug},
+    'help|h!'              => \$options->{help},
+    'verbose|v!'           => \$options->{verbose},
+    'log-file|l=s'         => \$options->{log_file},
+    'config-file|c=s'      => \$options->{config_file},
+) or usage_and_exit(1); # got some invalid options
+
+if( $options->{help} ) {
+    usage_and_exit(0);
+}
+
+
+# Read configuration from (PHP) config file
+my $cfg = LogZilla::Config->new( path => $options->{config_file} );
+
+# Connect to DB and setup error handler to log to $log and then exit with error
+my $dbh = connect_to_db();
+my $dbh_sphinx = DBI->connect( 'DBI:mysql::127.0.0.1:9306', 'root', ) || die "Could not connect to SphinxQL: $DBI::errstr";
+
+# Read settings from DB. 
+my $settings = read_settings_from_db();
+
+# Reconfigure log to use log_file (as we finally got it from $settings), also
+# set proper level and output based on $options{verbose} and $options{debug}
+setup_log();
+
+# Finally we are initialized, announce this to the world :-)
+$log->INFO( "Program initialized successfully" );
+
+
+my $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+$log->INFO("Collecting Counts");
+
+
+# some useful vars
+
+my ($results, $count, $sum, $star);
+
+my $sth_sphinx = $dbh_sphinx->prepare('select * from distributed group by host_crc limit 50000 OPTION max_matches=5000;');
+$sth_sphinx->execute();
+my $sth_syslog = $dbh->prepare('select * from hosts');
+$sth_syslog->execute();
+
+if ( $sth_sphinx->rows <= 0 ) {
+    $log->INFO("There are no hosts in the DB yet");
+} else {
+    $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+    $log->INFO("Sphinx Hosts:\t%s", commify( $sth_sphinx->rows ));
+    $log->INFO("DB Hosts:\t\t%s",   commify( $sth_syslog->rows ));
+}
+
+# due to a bug in sphinxql when using sum you also need to use a group-by
+$sth_sphinx = $dbh_sphinx->prepare('select  severity, sum(counter) from distributed group by severity;');
+$sth_sphinx->execute();
+$sth_syslog = $dbh->prepare('select sum(counter) from logs');
+
+#$sth_syslog->execute();
+$count = 0;
+if ( $sth_sphinx->rows == 0 ) {
+    $log->INFO("ERROR: No data found.");
+} else {
+    while ( $results = $sth_sphinx->fetchrow_hashref ) {
+        $count = $count + $results->{'sum(counter)'};
+    }
+    $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+    $log->INFO("Sphinx sum(counter):\t%s", commify($count));
+    my $spx_total = $dbh_sphinx->do('select * from distributed limit 1');
+    my $spx_meta  = $dbh_sphinx->prepare('show meta');
+    $spx_meta->execute();
+    while ( $results = $spx_meta->fetchrow_hashref ) {
+        if ( $results->{'Variable_name'} eq "total_found" ) {
+            $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+            $log->INFO("Sphinx count(*):\t%s", commify( $results->{'Value'} ));
+        }
+
+        #for ( keys %$results ) {
+        #print "$_ => $results->{$_}\n"
+        #}
+    }
+    if ( $count < 50000000 ) {
+        $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+        $sum = $dbh->selectrow_array("select sum(counter) from logs");
+        $log->INFO("DB sum(counter):\t%s", commify($sum));
+    } else {
+        $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+        $log->INFO("DB sum(counter):\tSkipped. DB Too Large.");
+    }
+    $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+    my $star = $dbh->selectrow_array("select count(*) from logs");
+    $log->INFO("DB count(*):\t\t%s", commify($star));
+    if ( $sum > 0 ) {
+        my $r    = ( $sum - $star );
+        $log->INFO("Deduplicated Events:\t%.2f%%",  ( $r / $sum ) * 100);
+    } else {
+        $date = strftime "%Y-%m-%d %H:%M:%S", localtime;
+        $log->INFO("Deduplicated Events:\tSkipped. DB Too Large.");
+    }
+}
+$sth_sphinx->finish;
+$sth_syslog->finish;
+$dbh_sphinx->disconnect();
+$dbh->disconnect();
+
+# =================================================================================================
+# Helper functions 
+# =================================================================================================
+
+sub commify {
+    my $text = reverse $_[0];
+    $text =~ s/(\d\d\d)(?=\d)(?!\d*\.)/$1,/g;
+    return scalar reverse $text;
+}
+
+sub connect_to_db {
+    my $dbh = DBI->connect( $cfg->db_dsn, $cfg->db_user, $cfg->db_pass, 
+    { HandleError => sub { $log->ERR( $_[0] ); exit(1) } } );
+    $dbh->{TraceLevel} = $options->{dbi_debug};
+    # cdukes: removed below - doesn't work with normal user priv's
+    # $dbh->do('set global innodb_stats_on_metadata=0');
+    return $dbh;
+}
+
+# Create hash with pairs of name => value for every row read from settings table
+sub read_settings_from_db {
+    my %settings;
+    my $sth = $dbh->prepare("SELECT name, value FROM settings");
+    $sth->execute();
+    while( my $r = $sth->fetchrow_arrayref ) {
+        $settings{$r->[0]} = $r->[1];
+    }
+    $settings{SNARE} = 0 if $settings{SNARE} != 1;
+    return \%settings;
+}
+
+sub setup_log {
+    my $log_dir = $settings->{PATH_LOGS};
+
+    # Create log dir, and build log path if not provided by command line option
+    if( ! -d $log_dir ) {
+        mkdir( $log_dir, 0755 ) or croak( "mkdir $log_dir: $!" );
+    }
+    if( ! $options->{log_file} ) {
+        $options->{log_file} = $log_dir . "/" . basename($0, '.pl') . '.log';
+    }
+
+    my $log_options = {};
+
+    # Set up output to file or both file and stderr
+    if( $options->{verbose} ) {
+        # make multiplexer FH sending data both to file and STDERR
+        open( my $fh, '>>:tee', $options->{log_file}, \*STDERR )
+            or croak( "$options->{log_file}: $!" );
+        $fh->autoflush(1);
+        $log_options->{fh} = $fh;
+    }
+    else {
+        open( my $fh, '>>', $options->{log_file} ) or croak( "$options->{log_file}: $!" );
+        $log_options->{fh} = $fh;
+    }
+
+    # Setup extra information to put in every log line, depending on debug level
+    if( $options->{debug} > 1 ) {
+        $log_options->{prefix} = "%D %T %S [%L] ";
+    }
+    else {
+        $log_options->{prefix} = "%D %T [%L] ";
+    }
+
+    $log_options->{level} = $options->{debug} > 0 ? 'DEBUG' : 'INFO';
+
+    $log->config( $log_options );
+
+    $SIG{__WARN__} = sub {
+        my $msg = shift;
+        $msg =~ s/\n//;
+        $log->WARN( $msg );
+    };
+    
+    $log->INFO( "Starting logging to $options->{log_file} with pid $$" );
+}
+
+sub DEBUG {
+    my( $level, @log_args ) = @_;
+    if( $options->{debug} >= $level ) {
+        $log->DEBUG( @log_args );
+    }
+}

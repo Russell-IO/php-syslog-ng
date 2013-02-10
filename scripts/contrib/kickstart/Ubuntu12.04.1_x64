@@ -1,0 +1,450 @@
+#!/usr/bin/perl
+
+# Used to install LogZilla on a new Ubuntu 12.04.1 LTS x64 server
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+my $os = `lsb_release -d -s`;
+if ( $os !~ /Ubuntu 12/ ) {
+    print("\033[1mThis tool will only run on Ubuntu 12.x!\n\033[0m");
+    exit;
+}
+
+my $login = ( getpwuid $> );
+print "You must run this script as root.\nTry \"sudo su -\" to login as root\n" if $login ne 'root';
+
+# Command line options
+my $options = {
+    debug       => 0,
+    verbose     => 0,
+    lzroot      => "/var/www/logzilla",
+    help        => 0,
+    spx_compile => 1,
+    checkout    => 1,
+    install     => 1,
+    prereqs     => 1,
+    apache      => 1,
+    ng          => 1,
+    license     => 1,
+    cpan        => 1,
+    agree       => 0,
+    vmbanner    => 0,
+    alias       => 1,
+};
+
+sub usage_and_exit {
+    my ($exit_code) = @_;
+    my $myname = $0;
+    $myname =~ s{.*/}{};    # leave just program name without path
+    print STDERR qq{
+This program is used to install LogZilla v4.x onto a fresh OS installation of Ubuntu 12.04.1 LTS x64 only.
+Using it for anything else may break the install.
+Usage: $myname [-hdvl] 
+-h        : this (help) message
+-d        : debug level (0-5) (0 = disabled [default])
+-v        : Also print results to STDERR
+-b        : set the base directory for logzilla (defaults to $options->{lzroot})
+-vmb      : Create console boot banner (for VMWare deployments) (default 0)
+-alias    : Create bash_aliases for both root and lzadmin user (if exists) (default 1)
+-s        : Compile Sphinx (default 1)
+-c        : Checkout SVN (default 1)
+-i        : Install LogZilla (default 1)
+-p        : Install System Prerequisites (default 1)
+-a        : Set up Apache (default 1)
+-ng       : Set up syslog-ng (default 1)
+-cp       : Set CPAN autoconfig (default 1)
+-agree    : Agree to the license terms and to this install method (default 0)
+Example: ./$myname -d 1 -v -base "/var/www/logzilla" -s 0 -c 0 -i 0 -p 0 -a 0 -ng 0 -alias 0 -agree 1
+};
+    exit($exit_code);
+}
+
+GetOptions(
+    'debug|d=i'       => \$options->{debug},
+    'help|h!'         => \$options->{help},
+    'verbose|v!'      => \$options->{verbose},
+    'base|b=s'        => \$options->{lzroot},
+    'spx_compile|s=i' => \$options->{spx_compile},
+    'checkout|c=i'    => \$options->{checkout},
+    'install|i=i'     => \$options->{install},
+    'prereqs|p=i'     => \$options->{prereqs},
+    'apache|a=i'      => \$options->{apache},
+    'ng|ng=i'         => \$options->{ng},
+    'license|lic=i'   => \$options->{license},
+    'cpan|cp=i'       => \$options->{cpan},
+    'agree=i'         => \$options->{agree},
+    'vmbanner|vmb=i'  => \$options->{vmbanner},
+    'alias=i'         => \$options->{alias},
+) or usage_and_exit(1);    # got some invalid options
+
+if ( $options->{help} ) {
+    usage_and_exit(0);
+}
+if ( $options->{agree} eq 0 ) {
+    print "\n\n################################################################################\n";
+    print("\033[1mWARNING!\n\033[0m");
+    print("\033[1mThis script was contributed to auto-install on Ubuntu 12.04.1 LTS Server x_64!\n\033[0m");
+    print("\033[1mYou must agree to the LogZilla license terms by using -agree 1\n\033[0m");
+    print("\033[1mBe sure you understand the implications of using this script before running it.\n\033[0m");
+    print "################################################################################\n";
+    usage_and_exit(0);
+}
+
+my $cmd;
+
+# Install Prereq's
+if ( $options->{prereqs} > 0 ) {
+    print "Making sure OS is up to date...\n";
+    system("apt-get update && apt-get -y upgrade");
+    print "Installing system prerequisites 1 of 9\n";
+    system("apt-get -y install build-essential apache2 mysql-server php5 libmysqlclient-dev syslog-ng php5-cli libapache2-mod-php5 subversion ssmtp");
+    print "Installing system prerequisites 2 of 9\n";
+    system("apt-get -y install linux-headers-\$(uname -r)");
+    print "Installing system prerequisites 3 of 9\n";
+    system("apt-get -y install php5-mysql php5-gd php5-json");
+    print "Installing system prerequisites 4 of 9\n";
+    system("apt-get -y install libdate-calc-perl libfile-tail-perl libdbd-mysql-perl libmime-lite-perl libdata-random-perl libdate-simple-perl");
+    print "Installing system prerequisites 5 of 9\n";
+    system("apt-get -y install libstring-crc32-perl libmoose-perl libnet-snmp-perl libwww-perl libdigest-md5-file-perl");
+    print "Installing system prerequisites 6 of 9\n";
+    system("apt-get -y install libchi-perl 2>&1");
+    print "Installing system prerequisites 7 of 9\n";
+    system("apt-get -y install libfind-lib-perl 2>&1");
+    print "Installing system prerequisites 8 of 8\n";
+    system("apt-get -y install libmoosex-params-validate-perl librrdtool-oo-perl 2>&1");
+    print "Installing system prerequisites 9 of 9\n";
+    system("apt-get -y install libtest-deep-perl libtest-mocktime-perl libberkeleydb-perl libfile-slurp-perl libdigest-crc-perl libdevel-nytprof-perl 2>&1");
+}
+################################################
+# Help if Perl mods are missing
+################################################
+if ( $options->{cpan} > 0 ) {
+    system("(echo o conf prerequisites_policy follow;echo o conf commit)|cpan");
+}
+my @mods = (qw(DBI Date::Calc Term::ReadLine File::Copy Digest::MD5 LWP::Simple File::Spec String::CRC32 MIME::Lite IO::Socket::INET Getopt::Long CHI Net::SNMP Log::Fast Test::mysqld PerlIO::Util));
+
+foreach my $mod (@mods) {
+    ( my $fn = "$mod.pm" ) =~ s|::|/|g;    # Foo::Bar::Baz => Foo/Bar/Baz.pm
+    if ( eval { require $fn; 1; } ) {
+    } else {
+        print "Installing required Perl module: $mod\n";
+        require CPAN;
+        CPAN::install($mod);
+    }
+}
+
+# Download code from subversion
+if ( $options->{checkout} > 0 ) {
+    my ( $svnroot, $install_dir ) = $options->{lzroot} =~ /(.*)\/(.*)$/;
+    print "Downloading LogZilla\n";
+    system("cd $svnroot && svn co https://subversion.assembla.com/svn/logzilla/ $install_dir 2>&1");
+}
+
+# Create the .lzrc file
+my $rcfn = $options->{lzroot} . "/scripts/.lzrc";
+print "Creating .lzrc at $rcfn\n";
+open FILE, ">$rcfn" or die $!;
+print FILE <<EOF;
+#------------------# 
+# basic properties # 
+#------------------# 
+\$dbroot = "root"; 
+\$dbrootpass = "mysql"; 
+\$dbname = "syslog"; 
+\$dbhost = "localhost"; 
+\$dbport = "3306"; 
+\$dbadmin = "syslogadmin"; # DO NOT USE ROOT HERE OR YOU WILL LOSE DB PERMISSIONS ON OTHER DB'S!
+\$dbadminpw = "syslogadmin"; 
+\$siteadmin = "admin"; 
+\$siteadminpw = "admin"; 
+\$email = "root\\\@localhost"; 
+\$sitename = "LogZilla Server"; 
+\$url = "/"; 
+\$logpath = "/var/log/logzilla"; 
+\$retention = "7"; 
+\$snare = "Y";
+\$syslogng_conf = "/etc/syslog-ng/syslog-ng.conf";
+\$syslogng_source = "s_net";
+\$webuser = "www-data";
+\$skipdb = "N";
+\$skipcron = "N";
+\$skipsysng = "N";
+\$skiplogrot = "N";
+\$skipsudo = "N";
+\$skipapparmor = "N";
+\$skipfb = "N";
+\$sphinx_compile = "N";
+\$sphinx_index = "Y";
+\$skip_ioncube = "N";
+\$skiplic = "Y";
+\$autoyes = "Y";
+EOF
+close FILE;
+print "Editing .lzrc\n";
+if ( $options->{spx_compile} > 0 ) {
+    system("perl -i -pe 's|\\\$sphinx_compile = \"N\"|\\\$sphinx_compile = \"Y\"|g' $options->{lzroot}/scripts/.lzrc 2>&1");
+} else {
+    system("perl -i -pe 's|\\\$sphinx_compile = \"Y\"|\\\$sphinx_compile = \"N\"|g' $options->{lzroot}/scripts/.lzrc 2>&1");
+}
+
+# Customization for this script and a fresh syslog-ng install
+if ( $options->{ng} > 0 ) {
+    print "Modifying syslog-ng template";
+    my $file = "/etc/syslog-ng/syslog-ng.conf";
+    if ( -e "$file" ) {
+        open my $config, '+<', "$file" or warn "FAILED: $!\n";
+        my @arr = <$config>;
+        if ( !grep( /lzconfig|udp|s_logzilla/, @arr ) ) {
+            system("perl -i -pe 's|destination df_logzilla {|source s_logzilla { udp(); };\ndestination df_logzilla {|g' $options->{lzroot}/scripts/contrib/system_configs/syslog-ng.conf 2>&1");
+            system("perl -i -pe 's|MYSOURCE|s_logzilla|g' $options->{lzroot}/scripts/contrib/system_configs/syslog-ng.conf 2>&1");
+        }
+    }
+}
+
+# Install LogZilla
+if ( $options->{install} > 0 ) {
+    print "Installing LogZilla\n";
+    system("(cd $options->{lzroot}/scripts && echo \"q\"| ./install) 2>&1");
+}
+
+# Set up Apache
+if ( $options->{apache} > 0 ) {
+    print "Setting up Apache\n";
+    my $file = "/etc/apache2/apache2.conf";
+    if ( -e "$file" ) {
+        open my $config, '+<', "$file" or warn "FAILED: $!\n";
+        my @arr = <$config>;
+        if ( !grep( /logzilla/, @arr ) ) {
+            system("perl -i -pe 's|#ServerRoot \"/etc/apache2\"|#ServerRoot \"/etc/apache2\"\nServerName \"logzilla\"|g' /etc/apache2/apache2.conf 2>&1");
+        }
+    }
+    system("cp $options->{lzroot}/scripts/contrib/system_configs/logzilla.apache /etc/apache2/sites-available/default 2>&1");
+    system("service apache2 restart 2>&1");
+}
+
+# Chown to the web user
+print "Changing $options->{lzroot}/html to Apache user\n";
+system("cd $options->{lzroot} && chown -R www-data:www-data html/ 2>&1");
+
+# Modify the .lzrc so that sphinx_compile is disabled on subsequent upgrades
+print "Disabling Sphinx compile for future upgrades\n";
+system("perl -i -pe 's|\\\$sphinx_compile = \"Y\"|\\\$sphinx_compile = \"N\"|g' $options->{lzroot}/scripts/.lzrc 2>&1");
+system("perl -i -pe 's|\\\$skiplic = \"Y\"|\\\$skiplic = \"N\"|g' $options->{lzroot}/scripts/.lzrc 2>&1");
+
+if ( $options->{vmbanner} > 0 ) {
+    print "Adding banner to system startup (/etc/rc.local)\n";
+    my $file = "/etc/rc.local";
+    if ( -e "$file" ) {
+        open my $config, '+<', "$file" or warn "FAILED: $!\n";
+        my @arr = <$config>;
+        if ( !grep( /banner/, @arr ) ) {
+            system("perl -i -pe 's|cd /var/www/logzilla/sphinx && bin/searchd|cd $options->{lzroot}/scripts/VM && ./bootup.sh|g' /etc/rc.local 2>&1");
+        }
+    }
+}
+
+# Create bash aliases file
+if ( $options->{alias} > 0 ) {
+
+    # always do root
+    &aliases('/root/.bash_aliases');
+
+    # only do lzadmin if this is a default vmbuild and that user exists
+    if ( getpwnam('lzadmin') ) {
+        print "Creating .bash_aliases file for the 'lzadmin' user\n";
+        &aliases('/home/lzadmin/.bash_aliases');
+        system("chown lzadmin:lzadmin /home/lzadmin/.bash_aliases");
+    }
+}
+
+sub aliases {
+    my $file = shift;
+    my @arr;
+    system("touch $file");
+    if ( -e "$file" ) {
+        open my $aliases, '+<', "$file" or warn "FAILED: $!\n";
+        @arr = <$aliases>;
+        if ( !grep( /logzilla/, @arr ) ) {
+            print "Creating bash aliases at $file\n";
+            open FILE, ">>$file" or die $!;
+            print FILE <<EOF;
+export LZ='/var/www/logzilla'
+export MY_ADMIN='root'
+export MY_ADMIN_PWD='mysql'
+# OS Related
+alias df='df -h'
+alias diff='diff -Nur'
+alias dir='ls --color=auto --format=vertical'
+alias du='du -h'
+alias ll='ls --color -lh'
+alias ls='ls --color=auto'
+alias pa='ps -efwwwww | grep -v grep | grep \$1'
+alias vi='vim'
+
+# MySQL Related
+alias mysql='mysql -u\$MY_ADMIN -p\$MY_ADMIN_PWD'
+alias mysqladmin='mysqladmin -u\$MY_ADMIN -p\$MY_ADMIN_PWD'
+alias mysqlcheck='mysqlcheck -u\$MY_ADMIN -p\$MY_ADMIN_PWD --auto-repair'
+alias mysqldump='mysqldump -u\$MY_ADMIN -p\$MY_ADMIN_PWD'
+alias mysqlreport='mysqlreport --user=\$MY_ADMIN --password=\$MY_ADMIN_PWD'
+alias mysqlshow='mysqldump -u\$MY_ADMIN -p\$MY_ADMIN_PWD'
+alias mytop='mytop -u\$MY_ADMIN -p\$MY_ADMIN_PWD'
+
+# LogZilla related
+alias mysqltuner='\$LZ/scripts/tools/mysqltuner.pl --user \$MY_ADMIN --pass \$MY_ADMIN_PWD'
+alias summary='\$LZ/scripts/tools/summary'
+alias lzupdate='(cd \$LZ && sudo svn update --accept theirs-conflict && cd scripts && ./upgrade)'
+
+# Sphinx shortcuts
+alias myspx='mysql -h0 -P9306'
+alias spx_full='(cd \$LZ/sphinx && ./indexer.sh full)'
+alias spx_delta='(cd \$LZ/sphinx && ./indexer.sh delta)'
+alias spx_stop='(cd \$LZ/sphinx && bin/searchd --stop)'
+alias spx_start='(cd \$LZ/sphinx && bin/searchd)'
+EOF
+        }
+    }
+}
+my $checkprocess = `ps -C mysqld -o pid=`;
+if ($checkprocess) {
+  print "Stopping MySQL\n";
+  system("service mysql stop");
+}
+&chk_ib_logs;
+&setup_mycnf("/etc/mysql/conf.d/logzilla.cnf");
+
+if ($checkprocess) {
+  print "Starting MySQL\n";
+  system("service mysql start");
+}
+
+sub chk_ib_logs {
+    my @f = </var/lib/mysql/ib_logfile*>;
+    foreach my $f (@f) {
+        next if $f =~ /orig/;
+        my $size = -s $f;
+        if ( $size <= 5242880 ) {
+            print "Your ib_logfiles are too small (5MB)\n";
+            print "Renaming $f to $f.orig. You can delete it later if you like.\n";
+            system("mv $f $f.orig");
+        }
+    }
+}
+
+sub setup_mycnf {
+    my $file = shift;
+    system("touch $file");
+    my $sysmem = `cat /proc/meminfo |  grep "MemTotal" | awk '{print \$2}'`;
+    $sysmem = ( $sysmem * 1024 );
+    my $poolsize                = ( $sysmem * 6 / 10 );
+    my $innodb_logfile_size     = ( $poolsize / 4 );
+    # Set max log file size to 256M
+    $innodb_logfile_size = 268435456 if ($innodb_logfile_size > 268435456);
+    my $innodb_log_buffer_size  = ( $innodb_logfile_size / 8 );
+    my $Hpoolsize               = humanBytes($poolsize);
+    my $Hinnodb_logfile_size    = humanBytes($innodb_logfile_size);
+    my $Hinnodb_log_buffer_size = humanBytes($innodb_log_buffer_size);
+    if ( -e "$file" ) {
+        open my $config, '+<', "$file" or warn "FAILED: $!\n";
+        my @arr = <$config>;
+        if ( !grep( /logzilla|lzconfig/, @arr ) ) {
+            print "Creating MySQL config for LogZilla at $file\n";
+            open FILE, ">>$file" or die $!;
+            print FILE <<EOF;
+[mysqld]
+#<lzconfig> BEGIN LogZilla settings
+# Based on http://www.mysqlperformanceblog.com/2007/11/01/innodb-performance-optimization-basics/
+# Do not depend on these settings to be correct for your server. Please consult your DBA
+# You can also run /var/www/logzilla/scripts/tools/mysqltuner.pl for help.
+event_scheduler=on
+symbolic-links=0
+skip-name-resolve
+myisam_use_mmap
+myisam-block-size = 14384
+query_cache_size = 32M
+query_cache_limit = 32M
+thread_cache_size = 8
+table_cache = 2048
+key_buffer_size = 128M
+innodb_log_buffer_size=8M
+innodb_flush_log_at_trx_commit=2
+innodb_thread_concurrency=8
+innodb_flush_method=O_DIRECT # use only if you have raid with bbu
+innodb_support_xa=false
+skip_innodb_checksums
+skip_innodb_doublewrite
+log-error=/var/log/mysql/error.log
+
+
+# Set innodb_buffer_pool_size to 50-80% of total system memory if this is a dedicated LogZilla server
+innodb_buffer_pool_size = $Hpoolsize
+
+# innodb log file size
+# http://dev.mysql.com/doc/refman/5.0/en/innodb-configuration.html
+# Note: If you modify innodb_log_file_size, you will first need to shut down mysql,
+# and delete/rename your current /var/lib/mysql/ib_logfile* files so that mysql can create new ones.
+# Check your /var/log/mysql/error.log on startup to make sure it worked properly.
+# Set the log file size to about 25% of the buffer pool size not to exceed 256M
+# http://www.mysqlperformanceblog.com/2008/11/21/how-to-calculate-a-good-innodb-log-file-size/
+innodb_log_file_size = $Hinnodb_logfile_size
+innodb_log_buffer_size = $Hinnodb_log_buffer_size
+
+##########################
+# Logging
+##########################
+#log=/var/log/mysql/general.log
+#slow-query-log=/var/log/mysql/mysql-slow.log
+
+# Log to the DB instead of files:
+# http://www.dzone.com/snippets/log-sql-queries-mysql-table
+log-output = TABLE
+# Disable logging in production environments.
+# Uncomment below to enable for testing.
+# slow-query-log 
+# general-log
+# long_query_time = 1
+# expire_logs_days = 1
+
+
+##########################
+# Meta data stats
+# Enable this to speed up log_processor startup.
+# On slow, or very large servers, InnoDB can take > 30 seconds to start
+# It's important that you know what you are doing this for, so please read before enabling it:
+# http://dev.mysql.com/doc/refman/5.1/en/innodb-parameters.html#sysvar_innodb_stats_on_metadata
+##########################
+innodb_stats_on_metadata = 0
+
+
+#</lzconfig> END LogZilla settings
+EOF
+        }
+    }
+}
+
+sub humanBytes {
+    my $bytes = shift();
+    if ( $bytes > 1099511627776 )    #   TB: 1024 GiB
+    {
+        return sprintf( "%.0fT", $bytes / 1099511627776 );
+    }
+    elsif ( $bytes > 1073741824 )    #   GB: 1024 MiB
+    {
+        return sprintf( "%.0fG", $bytes / 1073741824 );
+    }
+    elsif ( $bytes > 1048576 )       #   MB: 1024 KiB
+    {
+        return sprintf( "%.0fM", $bytes / 1048576 );
+    }
+    elsif ( $bytes > 1024 )          #   KB: 1024 B
+    {
+        return sprintf( "%.0fK", $bytes / 1024 );
+    }
+    else                             #   bytes
+    {
+        return "$bytes" . ( $bytes == 1 ? "" : "s" );
+    }
+}
+print "All Done\n";
